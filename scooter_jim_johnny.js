@@ -1049,16 +1049,15 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-3, 0, 0);
-	modelMatrix.rotate(90, 0, 1, 0);
-	modelMatrix.scale(0.5, 0.15, 4);
-	drawBoard(renderInfo, camera, modelMatrix)
-
+	modelMatrix.translate(-5, 0, 0);
+	renderInfo.stack.pushMatrix(modelMatrix);
+	drawBoard(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(1.7, 0, 0);
-	modelMatrix.rotate(0, 0, 1, 0);
-	modelMatrix.scale(0.5, 0.5, 0.5);
+	modelMatrix.translate(4.65, 0, 0);
 	drawWheel(renderInfo, camera, modelMatrix);
+	renderInfo.stack.popMatrix();
+	modelMatrix = renderInfo.stack.peekMatrix();
+
 }
 
 function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, modelMatrix, buffer) {
@@ -1087,6 +1086,8 @@ function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, mo
 }
 
 function drawWheel(renderInfo, camera, modelMatrix) {
+	modelMatrix.scale(0.5, 0.5, 1);
+	modelMatrix.rotate(renderInfo.movement.wheelRotation*3, 0, 0, 1)
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "elements", modelMatrix, renderInfo.torusBuffers);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.cylinderBuffers.topCircle);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.cylinderBuffers.bottomCircle);
@@ -1118,6 +1119,8 @@ function drawCubeNoLight(renderInfo, gl, camera, baseShaderInfo) {
 }
 
 function drawBoard(renderInfo, camera, modelMatrix) {
+	modelMatrix.rotate(90, 0, 1, 0);
+	modelMatrix.scale(0.5, 0.15, 4);
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.position);
 	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.normal);
@@ -1136,7 +1139,7 @@ function drawBoard(renderInfo, camera, modelMatrix) {
 	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.texture, renderInfo.rearBoxBuffers.textureObject);
 	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.rearBoxBuffers);
 	modelMatrix.translate(-8,0,0);
-	modelMatrix.rotate(180, 0, 1 ,0)
+	modelMatrix.rotate(0, 0, 1 ,0)
 	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.position);
 	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.normal);
 	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
@@ -1144,7 +1147,6 @@ function drawBoard(renderInfo, camera, modelMatrix) {
 	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
 	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.texture, renderInfo.rearBoxBuffers.textureObject);
 	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.rearBoxBuffers);
-	renderInfo.stack.pushMatrix(modelMatrix);
 }
 
 function drawCube(renderInfo, gl, camera, modelMatrix, buffer) {
