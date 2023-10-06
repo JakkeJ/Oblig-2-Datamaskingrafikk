@@ -4,7 +4,7 @@ import {Camera} from './base/helpers/Camera.js';
 import {isPowerOfTwo1, vectorToString} from "./base/lib/utility-functions.js";
 import {ImageLoader} from "./base/helpers/ImageLoader.js";
 import {Stack} from "./base/helpers/Stack.js";
-import { createTexturedCube } from './shapes.js';
+import { createTexturedCube, createTexturedTrapezoid } from './shapes.js';
 
 /**
  * MERK: Hvilket shaderpar som brukes bestemmes av check-boksen..
@@ -43,7 +43,7 @@ function startProgram(webGLCanvas, usePhong) {
 				coordBuffers: initCoordBuffers(webGLCanvas.gl),
 				cylinderBuffers: createCylinder(webGLCanvas.gl, textureImage, textureImage2, 0, 0, 0, 0, 0.35),
 				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
-				lightCubeBuffers: createCube(webGLCanvas.gl),
+				lightCubeBuffers: createLightCube(webGLCanvas.gl),
 				cubeBuffers: initCubeBuffers(webGLCanvas.gl, textureImage),
 				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage3, 5, 1, 20, 2.5),
 
@@ -219,7 +219,7 @@ function initCoordBuffers(gl) {
 }
 
 function initCubeBuffers(gl, textureImage) {
-	let cube = createTexturedCube();
+	let cube = createTexturedTrapezoid();
 
 	const cubePositionBuffer = gl.createBuffer();
 	bufferBinder(gl, cubePositionBuffer ,cube.positionArray);
@@ -885,7 +885,7 @@ function draw(currentTime, renderInfo, camera) {
 	drawCoord(renderInfo, camera);
 	drawScooter(renderInfo, camera);
 	drawLightCube(renderInfo, camera);
-	drawTexturedCube(renderInfo, camera);
+	//drawTexturedTrapezoid(renderInfo, camera);
 	drawBoard(renderInfo, camera);
 }
 
@@ -980,14 +980,17 @@ function drawCubeNoLight(renderInfo, gl, camera, baseShaderInfo) {
 	}
 }
 
-function drawTexturedCube(renderInfo, camera) {
+function drawTexturedTrapezoid(renderInfo, camera) {
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 
 	// Kople posisjon og farge-attributtene til tilhørende buffer:
 	
 	let modelMatrix = new Matrix4();
 	modelMatrix.setIdentity();
-	modelMatrix.scale(10, 10 ,10)
+	modelMatrix.translate(3.8, 1, 0);
+	modelMatrix.rotate(90, 0, 1, 0);
+	modelMatrix.rotate(45, 1, 0, 0);
+	modelMatrix.scale(0.2, 0.4 ,0.3);
 	camera.set();
 	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
 	// Send kameramatrisene til shaderen:
