@@ -26,6 +26,7 @@ function startProgram(webGLCanvas, usePhong) {
 	let textureUrls = [
 		'./base/textures/textureBoard.png',
 		'./base/textures/wheelTexture-2.png',
+		'./base/textures/greyTexture.png'
 	];
 		imageLoader.load((textureImages) => {
 		const textureImage = textureImages[0];
@@ -42,7 +43,8 @@ function startProgram(webGLCanvas, usePhong) {
 				coordBuffers: initCoordBuffers(webGLCanvas.gl),
 				cylinderBuffers: createCylinder(webGLCanvas.gl, textureImage, textureImage2, 0, 0, 0, 0, 0.35),
 				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
-				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage3, 5, 1, 20, 2.5),
+				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage, 5, 1, 20, 2.5),
+				rearBoxBuffers: createRearBox(webGLCanvas.gl, textureImage3),
 
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
@@ -65,9 +67,9 @@ function startProgram(webGLCanvas, usePhong) {
 
 			initKeyPress(renderInfo);
 			const camera = new Camera(renderInfo.gl, renderInfo.currentlyPressedKeys);
-			camera.camPosX = 0;
-			camera.camPosY = 10;
-			camera.camPosZ = 4;
+			camera.camPosX = 5.5;
+			camera.camPosY = 1.5;
+			camera.camPosZ = -2.0;
 
 			document.getElementById('light-position').innerHTML = vectorToString(renderInfo.light.lightPosition);
 			document.getElementById('diffuse-light-color').innerHTML = vectorToString(renderInfo.light.diffuseLightColor);
@@ -620,31 +622,203 @@ function createBoard(gl, textureImage) {
 	//Holder etter hvert p� alle uv-koordinater for terningen.
 	let textureCoordinates = [];
 	//Front (1-tallet):
-	let tl1=[0,1];
-	let bl1=[0,0];
-	let tr1=[0.33333,1];
-	let br1=[0.33333,0.5];
+	let tl1=[0,0];
+	let bl1=[0.2,0];
+	let tr1=[0,0.13];
+	let br1=[0.2,0.13];
 	textureCoordinates = textureCoordinates.concat(tl1, bl1, br1, tl1, br1, tr1);
 
 	//Høyre side (2-tallet):
-	let tl2=[0.33333,1];
-	let bl2=[0.33333,0.5];
-	let tr2=[0.66666,1];
-	let br2=[0.66666,0.5];
+	let tl2=[0,0];
+	let bl2=[0.2,0];
+	let tr2=[0,1];
+	let br2=[0.2,1];
 	textureCoordinates = textureCoordinates.concat(tl2, bl2, br2, tl2, br2, tr2);
 
 	//Baksiden (6-tallet):
-	let tl3=[0.66666,0.5];
-	let bl3=[0.66666,0];
-	let tr3=[1,0.5];
-	let br3=[1,0];
+	let tl3=[0,0];
+	let bl3=[0.2,0];
+	let tr3=[0,0.13];
+	let br3=[0.2,0.13];
 	textureCoordinates = textureCoordinates.concat(bl3, br3, tl3, br3, tr3, tl3);
 
 	//Venstre (5-tallet):
-	let tl4=[0,1];
-	let bl4=[0,0];
-	let tr4=[0.5,1];
-	let br4=[0.5,0];
+	let tl4=[0,0];
+	let bl4=[0.2,0];
+	let tr4=[0,1];
+	let br4=[0.2,1];
+	textureCoordinates = textureCoordinates.concat(bl4, tr4, tl4, br4, tr4, bl4);
+
+	//Toppen (3-tallet):
+	let tl5=[0.5,1];
+	let bl5=[0.5,0];
+	let tr5=[1,1];
+	let br5=[1,0];
+	textureCoordinates = textureCoordinates.concat(bl5, br5, tl5, tl5, br5, tr5);
+
+	//Bunnen (4-tallet):
+	let tl6=[0,1];
+	let bl6=[0,0];
+	let tr6=[0.5,1];
+	let br6=[0.5,0];
+	textureCoordinates = textureCoordinates.concat(tr6, bl6, br6,tr6,tl6, bl6);
+
+
+
+	const positionBuffer = gl.createBuffer();
+	bufferBinder(gl, positionBuffer, positions);
+
+	const boardTexture = gl.createTexture();
+	bindTexture(gl, boardTexture, textureImage);
+
+	const textureBuffer = gl.createBuffer();
+	bufferBinder(gl, textureBuffer, textureCoordinates);
+
+	const normalsBuffer = gl.createBuffer();
+	bufferBinder(gl, normalsBuffer, normals);
+
+	return  {
+		position: positionBuffer,
+		texture: textureBuffer,
+		textureObject: boardTexture,
+		normal: normalsBuffer,
+		vertexCount: positions.length/3
+	};
+}
+
+function createRearBox(gl, textureImage) {
+	let normals = [];
+	let positions = [
+		//Forsiden (pos):
+		-1, 1, 1,
+		-1,-1, 1,
+		1,-1, 1,
+
+		-1,1,1,
+		1,-1,1,
+		1,1,1,
+
+		//Høyre side:
+		1,1,1,
+		1,-1,1,
+		1,-1,-1,
+
+		1,1,1,
+		1,-1,-1,
+		1,1,-1,
+
+		//Baksiden (pos):
+		1,-1,-1,
+		-1,-1,-1,
+		1, 1,-1,
+
+		-1,-1,-1,
+		-1,1,-1,
+		1,1,-1,
+
+		//Venstre side:
+		-1,-1,-1,
+		-1,1,1,
+		-1,1,-1,
+
+		-1,-1,1,
+		-1,1,1,
+		-1,-1,-1,
+
+		//Topp:
+		-1,1,1,
+		1,1,1,
+		-1,1,-1,
+
+		-1,1,-1,
+		1,1,1,
+		1,1,-1,
+
+		//Bunn:
+		-1,-1,-1,
+		1,-1,1,
+		-1,-1,1,
+
+		-1,-1,-1,
+		1,-1,-1,
+		1,-1,1,
+	];
+
+	// Front face normals
+	for (let i = 0; i < 6; i++) {
+		normals.push(0, 0, 1);
+	}
+
+	// Right face normals
+	for (let i = 0; i < 6; i++) {
+		normals.push(1, 0, 0);
+	}
+
+	// Back face normals
+	for (let i = 0; i < 6; i++) {
+		normals.push(0, 0, -1);
+	}
+
+	// Left face normals
+	for (let i = 0; i < 6; i++) {
+		normals.push(-1, 0, 0);
+	}
+
+	// Top face normals
+	for (let i = 0; i < 6; i++) {
+		normals.push(0, 1, 0);
+	}
+
+	// Bottom face normals
+	for (let i = 0; i < 6; i++) {
+		normals.push(0, -1, 0);
+	}
+
+	let color = {red: 1.0, green: 0.45, blue: 0.9, alpha: 1.0}
+	let colors = [];
+	//Samme farge på alle sider:
+	for (let i = 0; i < 36; i++) {
+		colors.push(color.red, color.green, color.blue, color.alpha);
+	}
+
+	// Teksturkoordinater / UV-koordinater:
+	//Setter uv-koordinater for hver enkelt side av terningen vha. en enkel tekstur.
+	//Teksturen / .png-fila må se slik ut, dvs. 2 linjer og 3 kolonner, der hver celle
+	//inneholder et "bilde" av et tall (1-6).
+	// -------------
+	// | 1 | 2 | 3 |
+	// |-----------|
+	// | 4 | 5 | 6 |
+	// -------------
+
+	//Holder etter hvert p� alle uv-koordinater for terningen.
+	let textureCoordinates = [];
+	//Front (1-tallet):
+	let tl1=[0,0];
+	let bl1=[0.1,0];
+	let tr1=[0,0.1];
+	let br1=[0.1,0.1];
+	textureCoordinates = textureCoordinates.concat(tl1, bl1, br1, tl1, br1, tr1);
+
+	//Høyre side (2-tallet):
+	let tl2=[0,0];
+	let bl2=[0.13,0];
+	let tr2=[0,0.2];
+	let br2=[0.2,0.13];
+	textureCoordinates = textureCoordinates.concat(tl2, bl2, br2, tl2, br2, tr2);
+
+	//Baksiden (6-tallet):
+	let tl3=[0,0];
+	let bl3=[0.2,0];
+	let tr3=[0,0.13];
+	let br3=[0.2,0.13];
+	textureCoordinates = textureCoordinates.concat(bl3, br3, tl3, br3, tr3, tl3);
+
+	//Venstre (5-tallet):
+	let tl4=[0,0];
+	let bl4=[0.25,0];
+	let tr4=[0,1];
+	let br4=[0.2,1];
 	textureCoordinates = textureCoordinates.concat(bl4, tr4, tl4, br4, tr4, bl4);
 
 	//Toppen (3-tallet):
@@ -851,7 +1025,6 @@ function draw(currentTime, renderInfo, camera) {
 	drawCoord(renderInfo, camera);
 	drawScooter(renderInfo, camera);
 	drawLightCube(renderInfo, camera);
-	drawBoard(renderInfo, camera);
 }
 
 function drawCoord(renderInfo, camera) {
@@ -876,16 +1049,15 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-5, 0, 0);
-	modelMatrix.scale(1, 1, 1);
-	modelMatrix.rotate(renderInfo.movement.wheelRotation, 0, 0, 1);
+	modelMatrix.translate(-3, 0, 0);
+	modelMatrix.rotate(90, 0, 1, 0);
+	modelMatrix.scale(0.5, 0.15, 4);
 	drawBoard(renderInfo, camera, modelMatrix)
-	drawWheel(renderInfo, camera, modelMatrix);
-	renderInfo.stack.pushMatrix(modelMatrix);
+
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(10, 0, 0);
-	modelMatrix.scale(1, 1, 1);
-	modelMatrix.rotate(renderInfo.movement.wheelRotation*3, 0, 0, 1);
+	modelMatrix.translate(1.7, 0, 0);
+	modelMatrix.rotate(0, 0, 1, 0);
+	modelMatrix.scale(0.5, 0.5, 0.5);
 	drawWheel(renderInfo, camera, modelMatrix);
 }
 
@@ -945,7 +1117,7 @@ function drawCubeNoLight(renderInfo, gl, camera, baseShaderInfo) {
 	}
 }
 
-function drawBoard(renderInfo, camera) {
+function drawBoard(renderInfo, camera, modelMatrix) {
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.position);
 	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.normal);
@@ -953,21 +1125,34 @@ function drawBoard(renderInfo, camera) {
 	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
 	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
 	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.texture, renderInfo.boardBuffers.textureObject);
-	drawCube(renderInfo, renderInfo.gl, camera, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers);
+	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.boardBuffers);
+	modelMatrix.translate(0.8,0,1.1);
+	modelMatrix.scale(0.2, 1, 0.1);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.position);
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.normal);
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.texture, renderInfo.rearBoxBuffers.textureObject);
+	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.rearBoxBuffers);
+	modelMatrix.translate(-8,0,0);
+	modelMatrix.rotate(180, 0, 1 ,0)
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.position);
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.normal);
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.texture, renderInfo.rearBoxBuffers.textureObject);
+	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.rearBoxBuffers);
+	renderInfo.stack.pushMatrix(modelMatrix);
 }
 
-function drawCube(renderInfo, gl, camera) {
-	let modelMatrix = new Matrix4();
-	//M=I*T*O*R*S, der O=R*T
-	modelMatrix.setIdentity();
-	modelMatrix.translate(0, 0, 0)
-	modelMatrix.rotate(90, 0, 1, 0);
-	modelMatrix.scale(0.5, 0.15, 4);
+function drawCube(renderInfo, gl, camera, modelMatrix, buffer) {
 	camera.set();
 	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
-	gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
-	gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, renderInfo.boardBuffers.vertexCount);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, renderInfo.rearBoxBuffers.vertexCount);
 }
 
 function rotation(renderInfo){
