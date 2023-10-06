@@ -46,11 +46,11 @@ function startProgram(webGLCanvas, usePhong) {
 				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
 				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage, 5, 1, 20, 2.5),
 				rearBoxBuffers: createRearBox(webGLCanvas.gl, textureImage3),
+				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, textureImage),
 
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
-				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, textureImage),
-				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage3, 5, 1, 20, 2.5),
+				
 
 				currentlyPressedKeys: [],
 				movement: {
@@ -1217,7 +1217,6 @@ function drawTexturedTrapezoid(renderInfo, camera) {
  }
 
 function drawBoard(renderInfo, camera, modelMatrix) {
-	modelMatrix = renderInfo.stack.peekMatrix()
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.scale(0.5, 0.15, 4);
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
