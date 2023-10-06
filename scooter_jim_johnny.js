@@ -1049,14 +1049,15 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-5, 0, 0);
+	modelMatrix.translate(0, 0, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(4.65, 0, 0);
 	drawWheel(renderInfo, camera, modelMatrix);
-	renderInfo.stack.popMatrix();
+	//sylinder her
 	modelMatrix = renderInfo.stack.peekMatrix();
+	//frontdel her
 
 }
 
