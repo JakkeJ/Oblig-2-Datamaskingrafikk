@@ -724,7 +724,7 @@ function createBoard(gl, textureImage) {
 }
 
 function createRearBox(gl, textureImage) {
-	let normals = [];
+	/*let normals = [];
 	let positions = [
 		//Forsiden (pos):
 		-1, 1, 1,
@@ -870,7 +870,7 @@ function createRearBox(gl, textureImage) {
 	let bl6=[0,0];
 	let tr6=[0.5,1];
 	let br6=[0.5,0];
-	textureCoordinates = textureCoordinates.concat(tr6, bl6, br6,tr6,tl6, bl6);
+	textureCoordinates = textureCoordinates.concat(tr6, bl6, br6,tr6,tl6, bl6); 
 
 
 
@@ -892,7 +892,32 @@ function createRearBox(gl, textureImage) {
 		textureObject: boardTexture,
 		normal: normalsBuffer,
 		vertexCount: positions.length/3
-	};
+	}; */
+
+	let rearBox = createTexturedCube()
+
+	const positionBuffer = gl.createBuffer();
+	bufferBinder(gl, positionBuffer, rearBox.positionArray);
+
+	const boardTexture = gl.createTexture();
+	bindTexture(gl, boardTexture, textureImage);
+
+	const textureBuffer = gl.createBuffer();
+	bufferBinder(gl, textureBuffer, rearBox.textureArray);
+
+	const normalsBuffer = gl.createBuffer();
+	bufferBinder(gl, normalsBuffer, rearBox.normalArray);
+
+	return {
+		position: positionBuffer,
+		texture: textureBuffer,
+		textureObject: boardTexture,
+		normal: normalsBuffer,
+		vertexCount: rearBox.positionArray.length/3
+
+	}
+
+	
 }
 
 function bindTexture(gl, texture, textureImage) {
@@ -1192,9 +1217,11 @@ function drawTexturedTrapezoid(renderInfo, camera) {
  }
 
 function drawBoard(renderInfo, camera, modelMatrix) {
+	modelMatrix = renderInfo.stack.peekMatrix()
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.scale(0.5, 0.15, 4);
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.boardBuffers);
 	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.position);
 	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.normal);
 	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
@@ -1202,6 +1229,7 @@ function drawBoard(renderInfo, camera, modelMatrix) {
 	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
 	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.texture, renderInfo.boardBuffers.textureObject);
 	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.boardBuffers);
+
 	modelMatrix.translate(0.8,0,1.1);
 	modelMatrix.scale(0.2, 1, 0.1);
 	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.position);
@@ -1211,6 +1239,8 @@ function drawBoard(renderInfo, camera, modelMatrix) {
 	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
 	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.texture, renderInfo.rearBoxBuffers.textureObject);
 	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.rearBoxBuffers);
+
+	
 	modelMatrix.translate(-8,0,0);
 	modelMatrix.rotate(0, 0, 1 ,0)
 	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.position);
