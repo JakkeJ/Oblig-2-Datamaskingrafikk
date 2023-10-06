@@ -42,14 +42,14 @@ function startProgram(webGLCanvas, usePhong) {
 				stack: new Stack(),
 
 				coordBuffers: initCoordBuffers(webGLCanvas.gl),
-				cylinderBuffers: createCylinder(webGLCanvas.gl, textureImage, textureImage2, 0, 0, 0, 0, 0.35),
+				wheelRimBuffers: createCylinder(webGLCanvas.gl, textureImage, textureImage2, 0, 0, 0, 0, 0.35),
 				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
 				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage, 5, 1, 20, 2.5),
 				rearBoxBuffers: createRearBox(webGLCanvas.gl, textureImage3),
 
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
-				cubeBuffers: initCubeBuffers(webGLCanvas.gl, textureImage),
+				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, textureImage),
 				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage3, 5, 1, 20, 2.5),
 
 				currentlyPressedKeys: [],
@@ -223,7 +223,7 @@ function initCoordBuffers(gl) {
 	};
 }
 
-function initCubeBuffers(gl, textureImage) {
+function initTrapezoidBuffers(gl, textureImage) {
 	let cube = createTexturedTrapezoid();
 
 	const cubePositionBuffer = gl.createBuffer();
@@ -1129,9 +1129,9 @@ function drawWheel(renderInfo, camera, modelMatrix) {
 	modelMatrix.scale(0.5, 0.5, 1);
 	modelMatrix.rotate(renderInfo.movement.wheelRotation*3, 0, 0, 1)
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "elements", modelMatrix, renderInfo.torusBuffers);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.cylinderBuffers.topCircle);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.cylinderBuffers.bottomCircle);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.cylinderBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.wheelRimBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.wheelRimBuffers.bottomCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.wheelRimBuffers);
 
 }
 
@@ -1184,10 +1184,10 @@ function drawTexturedTrapezoid(renderInfo, camera) {
 	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
 	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
 
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.cubeBuffers.normals);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.cubeBuffers.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.cubeBuffers.texture, renderInfo.cubeBuffers.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, renderInfo.cubeBuffers.vertexCount);
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.trapezoidBuffers.normals);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.trapezoidBuffers.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.trapezoidBuffers.texture, renderInfo.trapezoidBuffers.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, renderInfo.trapezoidBuffers.vertexCount);
 
  }
 
