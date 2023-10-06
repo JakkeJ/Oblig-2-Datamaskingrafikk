@@ -4,6 +4,7 @@ import {Camera} from './base/helpers/Camera.js';
 import {isPowerOfTwo1, vectorToString} from "./base/lib/utility-functions.js";
 import {ImageLoader} from "./base/helpers/ImageLoader.js";
 import {Stack} from "./base/helpers/Stack.js";
+import { createTexturedCube } from './shapes.js';
 
 /**
  * MERK: Hvilket shaderpar som brukes bestemmes av check-boksen..
@@ -42,6 +43,7 @@ function startProgram(webGLCanvas, usePhong) {
 				cylinderBuffers: createCylinder(webGLCanvas.gl, textureImage, textureImage2, 0, 0, 0, 0, 0.35),
 				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
 				lightCubeBuffers: createCube(webGLCanvas.gl),
+				cubeBuffers: initCubeBuffers(webGLCanvas.gl, textureImage),
 
 				currentlyPressedKeys: [],
 				movement: {
@@ -214,6 +216,38 @@ function initCoordBuffers(gl) {
 	};
 }
 
+function initCubeBuffers(gl, textureImage) {
+	let cube = createTexturedCube();
+
+	const cubePositionBuffer = gl.createBuffer();
+	bufferBinder(gl, cubePositionBuffer ,cube.positionArray);
+	const cubeNormalsBuffer = gl.createBuffer();
+	bufferBinder(gl, cubeNormalsBuffer ,cube.normalArray);
+
+	const rectangleTexture = gl.createTexture();
+   
+   gl.bindTexture(gl.TEXTURE_2D, rectangleTexture);
+   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);  
+   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+   gl.bindTexture(gl.TEXTURE_2D, null);
+	
+	
+	const cubeTextureBuffer = gl.createBuffer();
+	bufferBinder(gl, cubeTextureBuffer, cube.textureArray);
+
+	return {
+		position: cubePositionBuffer,
+		normals: cubeNormalsBuffer,
+		texture: cubeTextureBuffer,
+		vertexCount: cube.positionArray.length/3,
+		textureObject: rectangleTexture,
+	};
+};
+
 function calculateSphereNormalForVertex(x, y, z) {
 	let normal = vec3.fromValues(x,y,z);
 	let normalisertNormal = vec3.create();
@@ -270,6 +304,8 @@ function bufferBinder(gl, buffer, data) {
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 	gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
+
+
 
 function createTorus(gl, textureImage) {
 	const color = {red:0.8, green:0.1, blue:0.6, alpha:1};
@@ -675,6 +711,7 @@ function draw(currentTime, renderInfo, camera) {
 	drawCoord(renderInfo, camera);
 	drawScooter(renderInfo, camera);
 	drawLightCube(renderInfo, camera);
+	drawTexturedCube(renderInfo, camera);
 }
 
 function drawCoord(renderInfo, camera) {
@@ -763,6 +800,36 @@ function drawCube(renderInfo, gl, camera, baseShaderInfo, planetsBuffer, planets
 		gl.drawArrays(gl.TRIANGLE_STRIP, i * 4, 4);
 	}
 }
+
+function drawTexturedCube(renderInfo, camera) {
+	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
+
+	// Kople posisjon og farge-attributtene til tilhørende buffer:
+	
+	let modelMatrix = new Matrix4();
+	modelMatrix.setIdentity();
+	modelMatrix.scale(10, 10 ,10)
+	camera.set();
+	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
+	// Send kameramatrisene til shaderen:
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
+
+	let normalMatrix = mat3.create();
+	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
+	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
+	
+	
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.cubeBuffers.normals);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.cubeBuffers.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.cubeBuffers.texture, renderInfo.cubeBuffers.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, renderInfo.cubeBuffers.vertexCount);
+
+ }
 
 function rotation(renderInfo){
 	if (renderInfo.currentlyPressedKeys['KeyN']){
