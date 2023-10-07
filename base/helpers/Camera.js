@@ -104,12 +104,6 @@ export class Camera {
         }
 
         //Zoom inn og ut:
-        if (this.currentlyPressedKeys['KeyV']) { //V
-            vec3.scale(camPosVec, camPosVec, 1.05);
-        }
-        if (this.currentlyPressedKeys['KeyB']) {	//B
-            vec3.scale(camPosVec, camPosVec, 0.95);
-        }
         if (this.currentlyPressedKeys['mousewheelup']) {
             vec3.scale(camPosVec, camPosVec, 0.95);
         } if (this.currentlyPressedKeys['mousewheeldown']) {
