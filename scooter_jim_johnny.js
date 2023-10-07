@@ -51,6 +51,11 @@ function startProgram(webGLCanvas, usePhong) {
 				steeringPoleAttachmentBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
 				frontBoxBuffers: initFrontBoxBuffers(webGLCanvas.gl, textureImage3),
 				steeringPoleBuffer: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
+				steeringAttachementBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
+				steeringBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
+				handlebarBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
+				handleBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
+
 
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
@@ -1162,36 +1167,47 @@ function drawScooter(renderInfo, camera) {
 	drawAxle(renderInfo, camera, modelMatrix);
 	renderInfo.stack.popMatrix();
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-4.16, 0.8, 0);
+	modelMatrix.translate(-4.23, 0.8, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	drawTexturedTrapezoid(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-0.5, 0.7, 0);
+	modelMatrix.translate(-0.8, 0.85, 0);  //-0.5, 0.7, 0)
 	//sammenlegging
 	modelMatrix.rotate(0, 0, 0, 1);
+	modelMatrix.rotate(0, 0, 1, 0);
 	//sammenleggning slutt
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPoleAttachment(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-0.12, -0.73, 0);
+	modelMatrix.translate(-0.11, -0.85, 0);  //-0.12, -0.73, 0
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawFrontWheelAttachment(renderInfo, camera, modelMatrix); 
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-0.1, -0.76, 0);  
+	modelMatrix.translate(-0.10, -0.8, 0);  
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawWheel(renderInfo, camera, modelMatrix);
 	modelMatrix.translate(0, 0, 0);
-	modelMatrix.scale(2, 2, 1);
+	modelMatrix.scale(2, 2, 0.9);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawAxle(renderInfo, camera, modelMatrix);
 	renderInfo.stack.popMatrix();
 	renderInfo.stack.popMatrix();
 	renderInfo.stack.popMatrix();
 	modelMatrix = renderInfo.stack.peekMatrix();
-	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix.translate(0.55, 4.5, 0);
+	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPole(renderInfo, camera, modelMatrix);
+	modelMatrix = renderInfo.stack.peekMatrix();
+	modelMatrix.translate(0.5, 4, 0);
+	renderInfo.stack.pushMatrix(modelMatrix);
+	drawSteeringAttachment(renderInfo, camera, modelMatrix);
+	modelMatrix = renderInfo.stack.peekMatrix();
+	drawHandlebar(renderInfo, camera, modelMatrix);
+	modelMatrix = renderInfo.stack.peekMatrix();
+	modelMatrix.translate(0, 0, 1.45);
+	drawHandle(renderInfo, camera, modelMatrix);
+	
 
 }
 
@@ -1253,7 +1269,7 @@ function drawLightCube(renderInfo, camera) {
 
 function drawTexturedTrapezoid(renderInfo, camera, modelMatrix) {
 	modelMatrix.rotate(270, 0, 1, 0);
-	modelMatrix.rotate(35, 1, 0, 0);
+	modelMatrix.rotate(40, 1, 0, 0);
 	modelMatrix.scale(0.2, 0.23, 0.23)
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.trapezoidBuffers);
  }
@@ -1311,7 +1327,7 @@ function drawAxle(renderInfo, camera, modelMatrix) {
 function drawSteeringPoleAttachment(renderInfo, camera, modelMatrix) {
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.rotate(97, 1, 0, 0);
-	modelMatrix.scale(0.34, 0.34, 1.4);
+	modelMatrix.scale(0.34, 0.34, 1.7); //0.34, 0.34, 1.4
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringPoleAttachmentBuffers);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleAttachmentBuffers.topCircle);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleAttachmentBuffers.bottomCircle);
@@ -1322,7 +1338,7 @@ function drawFrontWheelAttachment(renderInfo, camera, modelMatrix){
 
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.rotate(7, 1, 0, 0);
-	modelMatrix.scale(0.4, 0.04, 0.34)
+	modelMatrix.scale(0.34, 0.04, 0.36) //0.4, 0.04, 0.34
 	
 
 	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
@@ -1334,7 +1350,7 @@ function drawFrontWheelAttachment(renderInfo, camera, modelMatrix){
 	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.texture, renderInfo.frontBoxBuffers.textureObject);
 	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.frontBoxBuffers);
 
-	modelMatrix.translate(0.87, -11.5, 0)
+	modelMatrix.translate(0.87, -11, 0)
 	modelMatrix.rotate(0, 0, 0, 1);
 	modelMatrix.scale(0.1, 12, 0.5)
 
@@ -1369,6 +1385,32 @@ function drawSteeringPole(renderInfo, camera, modelMatrix) {
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringPoleBuffer);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleBuffer.topCircle);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleBuffer.bottomCircle);
+}
+
+function drawSteeringAttachment(renderInfo, camera, modelMatrix) {
+	modelMatrix.scale(0.2, 0.2, 0.8);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringAttachementBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringAttachementBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringAttachementBuffers.bottomCircle);
+}
+
+function drawHandlebar(renderInfo, camera, modelMatrix) {
+	modelMatrix.scale(0.12, 0.12, 4.5);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.handlebarBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handlebarBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handlebarBuffers.bottomCircle);
+}
+
+function drawHandle(renderInfo, camera, modelMatrix) {
+	modelMatrix.scale(0.16, 0.16, 1.5);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.handleBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle);
+
+	modelMatrix.translate(0, 0, -1.935);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.handleBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle);
 }
 
 function rotation(renderInfo){
