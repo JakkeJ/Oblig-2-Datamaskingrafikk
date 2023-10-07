@@ -252,7 +252,7 @@ function initTrapezoidBuffers(gl, textureImage) {
 
 	return {
 		position: cubePositionBuffer,
-		normals: cubeNormalsBuffer,
+		normal: cubeNormalsBuffer,
 		texture: cubeTextureBuffer,
 		vertexCount: cube.positionArray.length/3,
 		textureObject: cubeTexture,
@@ -1160,19 +1160,23 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(0, 0, 0);
 	drawAxle(renderInfo, camera, modelMatrix);
-	modelMatrix = renderInfo.stack.popMatrix();
+	renderInfo.stack.popMatrix();
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-4.16, 0.8, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
+	modelMatrix = renderInfo.stack.peekMatrix();
 	drawTexturedTrapezoid(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.5, 0.7, 0);
+	//sammenlegging
+	modelMatrix.rotate(0, 0, 0, 1);
+	//sammenleggning slutt
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPoleAttachment(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.12, -0.73, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
-	drawFrontWheelAttachement(renderInfo, camera, modelMatrix); 
+	drawFrontWheelAttachment(renderInfo, camera, modelMatrix); 
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.1, -0.76, 0);  
 	renderInfo.stack.pushMatrix(modelMatrix);
@@ -1181,9 +1185,9 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.scale(2, 2, 1);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawAxle(renderInfo, camera, modelMatrix);
-	modelMatrix = renderInfo.stack.popMatrix();
-	modelMatrix = renderInfo.stack.popMatrix();
-	modelMatrix = renderInfo.stack.popMatrix();
+	renderInfo.stack.popMatrix();
+	renderInfo.stack.popMatrix();
+	renderInfo.stack.popMatrix();
 	modelMatrix = renderInfo.stack.peekMatrix();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix.translate(0.55, 4.5, 0);
@@ -1193,20 +1197,23 @@ function drawScooter(renderInfo, camera) {
 
 function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, modelMatrix, buffer) {
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.position);
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.normal);
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.texture, buffer.textureObject);
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelMatrix, false, modelMatrix.elements);
 	camera.set();
 	let modelViewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
+
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelMatrix, false, modelMatrix.elements);
 	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelViewMatrix.elements);
 	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
 	let normalMatrix = mat3.create();
 	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);
 	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
+
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.position);
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.normal);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.texture, buffer.textureObject);
 	if (drawMethod === "array") {
 		renderInfo.gl.drawArrays(drawType, 0, buffer.vertexCount);
 	}
@@ -1223,17 +1230,12 @@ function drawWheel(renderInfo, camera, modelMatrix) {
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.wheelRimBuffers.topCircle);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.wheelRimBuffers.bottomCircle);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.wheelRimBuffers);
-
 }
 
 function drawLightCube(renderInfo, camera) {
 	renderInfo.gl.useProgram(renderInfo.baseShader.program);
 	connectPositionAttribute(renderInfo.gl, renderInfo.baseShader, renderInfo.lightCubeBuffers.position);
 	connectColorAttribute(renderInfo.gl, renderInfo.baseShader, renderInfo.lightCubeBuffers.color);
-	drawCubeNoLight(renderInfo, renderInfo.gl, camera, renderInfo.baseShader, renderInfo.lightCubeBuffers, renderInfo.planetsAnimation);
-}
-
-function drawCubeNoLight(renderInfo, gl, camera, baseShaderInfo) {
 	let modelMatrix = new Matrix4();
 	//M=I*T*O*R*S, der O=R*T
 	modelMatrix.setIdentity();
@@ -1242,40 +1244,18 @@ function drawCubeNoLight(renderInfo, gl, camera, baseShaderInfo) {
 	modelMatrix.scale(0.2,0.2,0.2);
 	camera.set();
 	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
-	gl.uniformMatrix4fv(baseShaderInfo.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
-	gl.uniformMatrix4fv(baseShaderInfo.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.baseShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.baseShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
 	for (let i = 0; i < 6; i++) {
-		gl.drawArrays(gl.TRIANGLE_STRIP, i * 4, 4);
+		renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_STRIP, i * 4, 4);
 	}
 }
 
 function drawTexturedTrapezoid(renderInfo, camera, modelMatrix) {
-	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
-
 	modelMatrix.rotate(270, 0, 1, 0);
 	modelMatrix.rotate(35, 1, 0, 0);
 	modelMatrix.scale(0.2, 0.23, 0.23)
-	
-	camera.set();
-	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
-	// Send kameramatrisene til shaderen:
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
-
-	let normalMatrix = mat3.create();
-	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
-	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
-	
-	
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.trapezoidBuffers.normals);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.trapezoidBuffers.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.trapezoidBuffers.texture, renderInfo.trapezoidBuffers.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, renderInfo.trapezoidBuffers.vertexCount);
-
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.trapezoidBuffers);
  }
 
 function drawBoard(renderInfo, camera, modelMatrix) {
@@ -1322,84 +1302,22 @@ function drawCube(renderInfo, gl, camera, modelMatrix, buffer) {
 }
 
 function drawAxle(renderInfo, camera, modelMatrix) {
-
-	// Aktiver shader:
-	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 	modelMatrix.scale(0.05, 0.05, 0.8)
-	camera.set();
-	
-	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
-	// Send kameramatrisene til shaderen:
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
-
-	let normalMatrix = mat3.create();
-	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
-	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
-	
-	
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.texture, renderInfo.axleBuffers.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_STRIP, 0, renderInfo.axleBuffers.vertexCount);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.topCircle.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.topCircle.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.topCircle.texture, renderInfo.axleBuffers.topCircle.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.axleBuffers.topCircle.vertexCount);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.bottomCircle.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.bottomCircle.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.bottomCircle.texture, renderInfo.axleBuffers.bottomCircle.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.axleBuffers.bottomCircle.vertexCount);
-
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.axleBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.axleBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.axleBuffers.bottomCircle);
 }
 
 function drawSteeringPoleAttachment(renderInfo, camera, modelMatrix) {
-
-	// Aktiver shader:
-	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.rotate(97, 1, 0, 0);
 	modelMatrix.scale(0.34, 0.34, 1.4);
-	camera.set();
-	
-	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
-	// Send kameramatrisene til shaderen:
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
-
-	let normalMatrix = mat3.create();
-	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
-	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
-	
-	
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.texture, renderInfo.steeringPoleAttachmentBuffers.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_STRIP, 0, renderInfo.steeringPoleAttachmentBuffers.vertexCount);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.topCircle.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.topCircle.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.topCircle.texture, renderInfo.steeringPoleAttachmentBuffers.topCircle.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleAttachmentBuffers.topCircle.vertexCount);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.texture, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.vertexCount);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringPoleAttachmentBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleAttachmentBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleAttachmentBuffers.bottomCircle);
 }
 
-
-function drawFrontWheelAttachement(renderInfo, camera, modelMatrix){
+function drawFrontWheelAttachment(renderInfo, camera, modelMatrix){
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 
 	modelMatrix.rotate(90, 0, 1, 0);
@@ -1445,45 +1363,16 @@ function drawFrontWheelAttachement(renderInfo, camera, modelMatrix){
 }
 
 function drawSteeringPole(renderInfo, camera, modelMatrix) {
-
-	// Aktiver shader:
-	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.rotate(97, 1, 0, 0);
-	modelMatrix.scale(0.15, 0.15, 8);
-	camera.set();
-	
-	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
-	// Send kameramatrisene til shaderen:
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
-
-	let normalMatrix = mat3.create();
-	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
-	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
-	
-	
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.texture, renderInfo.steeringPoleBuffer.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_STRIP, 0, renderInfo.steeringPoleBuffer.vertexCount);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.topCircle.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.topCircle.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.topCircle.texture, renderInfo.steeringPoleBuffer.topCircle.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleBuffer.topCircle.vertexCount);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.bottomCircle.normal);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.bottomCircle.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.bottomCircle.texture, renderInfo.steeringPoleBuffer.bottomCircle.textureObject);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleBuffer.bottomCircle.vertexCount);
+	modelMatrix.scale(0.18, 0.18, 8);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringPoleBuffer);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleBuffer.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleBuffer.bottomCircle);
 }
 
 function rotation(renderInfo){
+	//wheel rotation
 	if (renderInfo.currentlyPressedKeys['KeyN']){
 		renderInfo.movement.wheelRotation += 2;
 	}
@@ -1491,7 +1380,7 @@ function rotation(renderInfo){
 		renderInfo.movement.wheelRotation -= 2;
 	}
 
-
+	//light position
 	if (renderInfo.currentlyPressedKeys['KeyI']){
 		renderInfo.light.lightPosition.y += 0.5;
 	}
