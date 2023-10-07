@@ -22,7 +22,8 @@ function startProgram(webGLCanvas, usePhong) {
 		'./base/textures/greyTexture.png',
 		'./base/textures/darkblueTexture.png',
 		'./base/textures/darkGreyTexture.png',
-		'./base/textures/handlebarTexture.png'
+		'./base/textures/handlebarTexture.png',
+		'./base/textures/roadTexture.png',
 	];
 	const chromeColor = niceColors.chrome;
 	const dullColor = niceColors.dullChrome;
@@ -33,6 +34,7 @@ function startProgram(webGLCanvas, usePhong) {
 		const darkblueTexture = textureImages[3];
 		const darkGreyTexture = textureImages[4];
 		const handlebarTexture = textureImages[5];
+		const roadTexture = textureImages[6];
 		if (isPowerOfTwo1(textureImage.width) && isPowerOfTwo1(wheelTexture.height)) {
 
 			const renderInfo = {
@@ -55,7 +57,7 @@ function startProgram(webGLCanvas, usePhong) {
 				steeringAttachmentBuffers: createCylinder(webGLCanvas.gl, darkblueTexture, darkblueTexture, 0, 0, 0, 0, 1),
 				handlebarBuffers: createCylinder(webGLCanvas.gl, greyTexture, greyTexture, 0, 0, 0, 0, 1),
 				handleBuffers: createCylinder(webGLCanvas.gl, handlebarTexture, handlebarTexture, 0, 0, 0, 0, 1),
-				worldBuffer: initWorldBuffers(webGLCanvas.gl, darkGreyTexture),
+				worldBuffer: initWorldBuffers(webGLCanvas.gl, roadTexture),
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
 				
