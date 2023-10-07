@@ -63,7 +63,7 @@ function startProgram(webGLCanvas, usePhong) {
 				movement: {
 					wheelRotation: 0.00,
 					frontWheelRotation: 0.00,
-					scooterFront: {rotation: 0.00, zIsPressed: false, xIsPressed: false}
+			
 				},
 				lastTime: 0,
 				fpsInfo: {  // Brukes til å beregne og vise FPS (Frames Per Seconds):
@@ -1186,7 +1186,7 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.8, 0.85, 0);  //-0.5, 0.7, 0)
 	//sammenlegging
-	modelMatrix.rotate(renderInfo.movement.scooterFront.rotation, 0, 0, 1);
+	modelMatrix.rotate(0, 0, 0, 1);
 	//sammenleggning slutt
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPoleAttachment(renderInfo, camera, modelMatrix);
