@@ -111,7 +111,7 @@ function initKeyPress(renderInfo) {
 		renderInfo.currentlyPressedKeys[event.code] = true;
 	}, false);
 
-	document.addEventListener('mousewheel', (event) => {
+	document.addEventListener('wheel', (event) => {
 		let dir = Math.sign(event.deltaY);
 		if (dir > 0) {
 			renderInfo.currentlyPressedKeys['mousewheeldown'] = true;
