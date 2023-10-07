@@ -141,8 +141,8 @@ export function createTexturedCube() {
 
 export function createTexturedTrapezoid() {
 
-    let angle = 3.5;
-    let length = 3;
+    let angle = 4.5;
+    let length = 4;
 
     let positionArray = [
 

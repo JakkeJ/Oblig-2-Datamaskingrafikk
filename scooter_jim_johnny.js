@@ -46,7 +46,11 @@ function startProgram(webGLCanvas, usePhong) {
 				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
 				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage, 5, 1, 20, 2.5),
 				rearBoxBuffers: createRearBox(webGLCanvas.gl, textureImage3),
-				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, textureImage),
+				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, textureImage3),
+				axleBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
+				steeringPoleAttachmentBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
+				frontBoxBuffers: initFrontBoxBuffers(webGLCanvas.gl, textureImage3),
+				steeringPoleBuffer: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
 
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
@@ -231,9 +235,9 @@ function initTrapezoidBuffers(gl, textureImage) {
 	const cubeNormalsBuffer = gl.createBuffer();
 	bufferBinder(gl, cubeNormalsBuffer ,cube.normalArray);
 
-	const rectangleTexture = gl.createTexture();
+	const cubeTexture = gl.createTexture();
    
-   gl.bindTexture(gl.TEXTURE_2D, rectangleTexture);
+   gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);  
    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
@@ -251,9 +255,43 @@ function initTrapezoidBuffers(gl, textureImage) {
 		normals: cubeNormalsBuffer,
 		texture: cubeTextureBuffer,
 		vertexCount: cube.positionArray.length/3,
-		textureObject: rectangleTexture,
+		textureObject: cubeTexture,
 	};
 };
+
+function initFrontBoxBuffers(gl, textureImage){
+
+	let basePlate = createTexturedCube()
+	const basePlatePositionBuffer = gl.createBuffer();
+	bufferBinder(gl, basePlatePositionBuffer ,basePlate.positionArray);
+	const basePlateNormalsBuffer = gl.createBuffer();
+	bufferBinder(gl, basePlateNormalsBuffer ,basePlate.normalArray);
+
+	const cubeTexture = gl.createTexture();
+
+	gl.bindTexture(gl.TEXTURE_2D, cubeTexture);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);  
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+	gl.bindTexture(gl.TEXTURE_2D, null);
+		
+		
+	const basePlateTextureBuffer = gl.createBuffer();
+	bufferBinder(gl, basePlateTextureBuffer, basePlate.textureArray);
+
+	return {
+		position: basePlatePositionBuffer,
+		normals: basePlateNormalsBuffer,
+		texture: basePlateTextureBuffer,
+		vertexCount: basePlate.positionArray.length/3,
+		textureObject: cubeTexture,
+	};
+	
+
+}
 
 function calculateSphereNormalForVertex(x, y, z) {
 	let normal = vec3.fromValues(x,y,z);
@@ -1087,8 +1125,7 @@ function draw(currentTime, renderInfo, camera) {
 	drawCoord(renderInfo, camera);
 	drawScooter(renderInfo, camera);
 	drawLightCube(renderInfo, camera);
-	//drawTexturedTrapezoid(renderInfo, camera);
-	drawBoard(renderInfo, camera);
+	
 }
 
 function drawCoord(renderInfo, camera) {
@@ -1117,11 +1154,40 @@ function drawScooter(renderInfo, camera) {
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(4.65, 0, 0);
+	modelMatrix.translate(4.65, 0, 0);  
+	renderInfo.stack.pushMatrix(modelMatrix);
 	drawWheel(renderInfo, camera, modelMatrix);
-	//sylinder her
 	modelMatrix = renderInfo.stack.peekMatrix();
-	//frontdel her
+	modelMatrix.translate(0, 0, 0);
+	drawAxle(renderInfo, camera, modelMatrix);
+	modelMatrix = renderInfo.stack.popMatrix();
+	modelMatrix = renderInfo.stack.peekMatrix();
+	modelMatrix.translate(-4.16, 0.8, 0);
+	renderInfo.stack.pushMatrix(modelMatrix);
+	drawTexturedTrapezoid(renderInfo, camera, modelMatrix);
+	modelMatrix = renderInfo.stack.peekMatrix();
+	modelMatrix.translate(-0.5, 0.7, 0);
+	renderInfo.stack.pushMatrix(modelMatrix);
+	drawSteeringPoleAttachment(renderInfo, camera, modelMatrix);
+	modelMatrix = renderInfo.stack.peekMatrix();
+	modelMatrix.translate(-0.12, -0.73, 0);
+	renderInfo.stack.pushMatrix(modelMatrix);
+	drawFrontWheelAttachement(renderInfo, camera, modelMatrix); 
+	modelMatrix = renderInfo.stack.peekMatrix();
+	modelMatrix.translate(-0.1, -0.76, 0);  
+	renderInfo.stack.pushMatrix(modelMatrix);
+	drawWheel(renderInfo, camera, modelMatrix);
+	modelMatrix.translate(0, 0, 0);
+	modelMatrix.scale(2, 2, 1);
+	renderInfo.stack.pushMatrix(modelMatrix);
+	drawAxle(renderInfo, camera, modelMatrix);
+	modelMatrix = renderInfo.stack.popMatrix();
+	modelMatrix = renderInfo.stack.popMatrix();
+	modelMatrix = renderInfo.stack.popMatrix();
+	modelMatrix = renderInfo.stack.peekMatrix();
+	renderInfo.stack.pushMatrix(modelMatrix);
+	modelMatrix.translate(0.55, 4.5, 0);
+	drawSteeringPole(renderInfo, camera, modelMatrix);
 
 }
 
@@ -1183,17 +1249,13 @@ function drawCubeNoLight(renderInfo, gl, camera, baseShaderInfo) {
 	}
 }
 
-function drawTexturedTrapezoid(renderInfo, camera) {
+function drawTexturedTrapezoid(renderInfo, camera, modelMatrix) {
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 
-	// Kople posisjon og farge-attributtene til tilhørende buffer:
+	modelMatrix.rotate(270, 0, 1, 0);
+	modelMatrix.rotate(35, 1, 0, 0);
+	modelMatrix.scale(0.2, 0.23, 0.23)
 	
-	let modelMatrix = new Matrix4();
-	modelMatrix.setIdentity();
-	modelMatrix.translate(3.8, 1, 0);
-	modelMatrix.rotate(90, 0, 1, 0);
-	modelMatrix.rotate(45, 1, 0, 0);
-	modelMatrix.scale(0.2, 0.4 ,0.3);
 	camera.set();
 	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
 	// Send kameramatrisene til shaderen:
@@ -1256,7 +1318,169 @@ function drawCube(renderInfo, gl, camera, modelMatrix, buffer) {
 	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
 	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
 	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, renderInfo.rearBoxBuffers.vertexCount);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, buffer.vertexCount);
+}
+
+function drawAxle(renderInfo, camera, modelMatrix) {
+
+	// Aktiver shader:
+	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
+	modelMatrix.scale(0.05, 0.05, 0.8)
+	camera.set();
+	
+	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
+	// Send kameramatrisene til shaderen:
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
+
+	let normalMatrix = mat3.create();
+	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
+	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
+	
+	
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.texture, renderInfo.axleBuffers.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_STRIP, 0, renderInfo.axleBuffers.vertexCount);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.topCircle.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.topCircle.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.topCircle.texture, renderInfo.axleBuffers.topCircle.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.axleBuffers.topCircle.vertexCount);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.bottomCircle.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.bottomCircle.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.axleBuffers.bottomCircle.texture, renderInfo.axleBuffers.bottomCircle.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.axleBuffers.bottomCircle.vertexCount);
+
+}
+
+function drawSteeringPoleAttachment(renderInfo, camera, modelMatrix) {
+
+	// Aktiver shader:
+	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
+	modelMatrix.rotate(90, 0, 1, 0);
+	modelMatrix.rotate(97, 1, 0, 0);
+	modelMatrix.scale(0.34, 0.34, 1.4);
+	camera.set();
+	
+	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
+	// Send kameramatrisene til shaderen:
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
+
+	let normalMatrix = mat3.create();
+	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
+	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
+	
+	
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.texture, renderInfo.steeringPoleAttachmentBuffers.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_STRIP, 0, renderInfo.steeringPoleAttachmentBuffers.vertexCount);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.topCircle.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.topCircle.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.topCircle.texture, renderInfo.steeringPoleAttachmentBuffers.topCircle.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleAttachmentBuffers.topCircle.vertexCount);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.texture, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleAttachmentBuffers.bottomCircle.vertexCount);
+}
+
+
+function drawFrontWheelAttachement(renderInfo, camera, modelMatrix){
+	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
+
+	modelMatrix.rotate(90, 0, 1, 0);
+	modelMatrix.rotate(7, 1, 0, 0);
+	modelMatrix.scale(0.4, 0.04, 0.34)
+	
+
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.normals);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.texture, renderInfo.frontBoxBuffers.textureObject);
+	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.frontBoxBuffers);
+
+	modelMatrix.translate(0.87, -11.5, 0)
+	modelMatrix.rotate(0, 0, 0, 1);
+	modelMatrix.scale(0.1, 12, 0.5)
+
+
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.normals);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.texture, renderInfo.frontBoxBuffers.textureObject);
+	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.frontBoxBuffers);
+
+	modelMatrix.translate(-17.3, 0, 0)
+	modelMatrix.rotate(0, 0, 0, 1);
+	modelMatrix.scale(1, 1, 1)
+
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.normals);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.texture, renderInfo.frontBoxBuffers.textureObject);
+	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.frontBoxBuffers);
+
+
+}
+
+function drawSteeringPole(renderInfo, camera, modelMatrix) {
+
+	// Aktiver shader:
+	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
+	modelMatrix.rotate(90, 0, 1, 0);
+	modelMatrix.rotate(97, 1, 0, 0);
+	modelMatrix.scale(0.15, 0.15, 8);
+	camera.set();
+	
+	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
+	// Send kameramatrisene til shaderen:
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
+	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
+
+	let normalMatrix = mat3.create();
+	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);  //NB!!! mat3.normalFromMat4! SE: gl-matrix.js
+	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
+	
+	
+	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.texture, renderInfo.steeringPoleBuffer.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_STRIP, 0, renderInfo.steeringPoleBuffer.vertexCount);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.topCircle.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.topCircle.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.topCircle.texture, renderInfo.steeringPoleBuffer.topCircle.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleBuffer.topCircle.vertexCount);
+
+	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.bottomCircle.normal);
+	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.bottomCircle.position);
+	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.steeringPoleBuffer.bottomCircle.texture, renderInfo.steeringPoleBuffer.bottomCircle.textureObject);
+	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLE_FAN, 0, renderInfo.steeringPoleBuffer.bottomCircle.vertexCount);
 }
 
 function rotation(renderInfo){
