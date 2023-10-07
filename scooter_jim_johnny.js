@@ -55,6 +55,7 @@ function startProgram(webGLCanvas, usePhong) {
 				steeringAttachmentBuffers: createCylinder(webGLCanvas.gl, darkblueTexture, darkblueTexture, 0, 0, 0, 0, 1),
 				handlebarBuffers: createCylinder(webGLCanvas.gl, greyTexture, greyTexture, 0, 0, 0, 0, 1),
 				handleBuffers: createCylinder(webGLCanvas.gl, handlebarTexture, handlebarTexture, 0, 0, 0, 0, 1),
+				worldBuffer: initWorldBuffers(webGLCanvas.gl, darkGreyTexture),
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
 				
@@ -64,6 +65,9 @@ function startProgram(webGLCanvas, usePhong) {
 					wheelRotation: 0.00,
 					frontWheelRotation: 0.00,
 					scooterFrontRotation: 0.00,
+					moveWorld: 0.00,
+					worldTurn: 0.00,
+					bikeTurn: 0.00,
 			
 				},
 				lastTime: 0,
@@ -313,6 +317,38 @@ function initFrontBoxBuffers(gl, textureImage){
 	};
 	
 
+}
+
+function initWorldBuffers(gl, textureImage){
+
+	let world = createTexturedCube()
+	const worldPositionBuffer = gl.createBuffer();
+	bufferBinder(gl, worldPositionBuffer ,world.positionArray);
+	const worldNormalBuffer = gl.createBuffer();
+	bufferBinder(gl, worldNormalBuffer ,world.normalArray);
+
+	const worldTexture = gl.createTexture();
+
+	gl.bindTexture(gl.TEXTURE_2D, worldTexture);
+	gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+	gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);  
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+
+	gl.bindTexture(gl.TEXTURE_2D, null);
+		
+		
+	const worldTextureBuffer = gl.createBuffer();
+	bufferBinder(gl, worldTextureBuffer, world.textureArray);
+
+	return {
+		position: worldPositionBuffer,
+		normal: worldNormalBuffer,
+		texture: worldTextureBuffer,
+		vertexCount: world.positionArray.length/3,
+		textureObject: worldTexture,
+	};
 }
 
 function calculateSphereNormalForVertex(x, y, z) {
@@ -1140,6 +1176,7 @@ function draw(currentTime, renderInfo, camera) {
 	drawCoord(renderInfo, camera);
 	drawScooter(renderInfo, camera);
 	drawLightCube(renderInfo, camera);
+	drawWorld(renderInfo, camera);
 	
 }
 
@@ -1167,6 +1204,7 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.scale(1, 1, 1);
 	modelMatrix.translate(0, 0, 0);
+	modelMatrix.rotate(renderInfo.movement.bikeTurn, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
@@ -1391,13 +1429,26 @@ function drawHandle(renderInfo, camera, modelMatrix) {
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle, true);
 }
 
+function drawWorld(renderInfo, camera){
+	let modelMatrix = new Matrix4();
+	modelMatrix.setIdentity();
+	camera.set();
+	modelMatrix.translate(renderInfo.movement.moveWorld, -1, 0);
+	modelMatrix.rotate(renderInfo.movement.worldTurn, 0, 1, 0)
+	modelMatrix.scale(100, 0.05, 100);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.worldBuffer, true);
+	
+}
+
 function rotation(renderInfo){
 	//wheel rotation
 	if (renderInfo.currentlyPressedKeys['KeyN']){
 		renderInfo.movement.wheelRotation += 2;
+		renderInfo.movement.moveWorld +=0.2;
 	}
 	if (renderInfo.currentlyPressedKeys['KeyM']){
 		renderInfo.movement.wheelRotation -= 2;
+		renderInfo.movement.moveWorld -=0.2;
 	}
 
 	//light position
@@ -1426,12 +1477,18 @@ function rotation(renderInfo){
 
 	if (renderInfo.currentlyPressedKeys['KeyV']){
 		if (renderInfo.movement.frontWheelRotation < 45) {
-		renderInfo.movement.frontWheelRotation += 1};
+		renderInfo.movement.frontWheelRotation += 1;
+		renderInfo.movement.worldTurn -=0.1;
+		//renderInfo.movement.bikeTurn +=2;
+	};
 	
 	}
 	if (renderInfo.currentlyPressedKeys['KeyB']){
 		if (renderInfo.movement.frontWheelRotation > -45) {
-			renderInfo.movement.frontWheelRotation -= 1};
+			renderInfo.movement.frontWheelRotation -= 1;
+			renderInfo.movement.worldTurn +=0.1;
+			//renderInfo.movement.bikeTurn -=2;
+		};
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyX'] && renderInfo.movement.scooterFrontRotation == -85){
