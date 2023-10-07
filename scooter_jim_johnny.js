@@ -63,6 +63,7 @@ function startProgram(webGLCanvas, usePhong) {
 				movement: {
 					wheelRotation: 0.00,
 					frontWheelRotation: 0.00,
+					scooterFrontRotation: 0.00,
 			
 				},
 				lastTime: 0,
@@ -1186,7 +1187,7 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.8, 0.85, 0);  //-0.5, 0.7, 0)
 	//sammenlegging
-	modelMatrix.rotate(0, 0, 0, 1);
+	modelMatrix.rotate(renderInfo.movement.scooterFrontRotation, 0, 0, 1);
 	//sammenleggning slutt
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPoleAttachment(renderInfo, camera, modelMatrix);
@@ -1431,6 +1432,16 @@ function rotation(renderInfo){
 	if (renderInfo.currentlyPressedKeys['KeyB']){
 		if (renderInfo.movement.frontWheelRotation > -45) {
 			renderInfo.movement.frontWheelRotation -= 1};
+	}
+
+	if (renderInfo.currentlyPressedKeys['KeyZ']){
+		if (renderInfo.movement.scooterFrontRotation < 0) {
+		renderInfo.movement.scooterFrontRotation += 1};
+	
+	}
+	if (renderInfo.currentlyPressedKeys['KeyX']){
+		if (renderInfo.movement.scooterFrontRotation > -85) {
+			renderInfo.movement.scooterFrontRotation -= 1};
 	}
 
 	
