@@ -1434,14 +1434,24 @@ function rotation(renderInfo){
 			renderInfo.movement.frontWheelRotation -= 1};
 	}
 
-	if (renderInfo.currentlyPressedKeys['KeyZ']){
+	if (renderInfo.currentlyPressedKeys['KeyZ'] && renderInfo.movement.scooterFrontRotation == -85){
+		let id = setInterval(function(){
 		if (renderInfo.movement.scooterFrontRotation < 0) {
-		renderInfo.movement.scooterFrontRotation += 1};
-	
+		renderInfo.movement.scooterFrontRotation += 1}
+		else {clearInterval(id)}
+	}, 10)
+
+
 	}
-	if (renderInfo.currentlyPressedKeys['KeyX']){
+	
+	
+	if (renderInfo.currentlyPressedKeys['KeyX'] &&  renderInfo.movement.scooterFrontRotation == 0){
+		let id = setInterval(function(){
 		if (renderInfo.movement.scooterFrontRotation > -85) {
-			renderInfo.movement.scooterFrontRotation -= 1};
+			renderInfo.movement.scooterFrontRotation -= 1}
+			else {clearInterval(id)}
+	}, 10)
+	
 	}
 
 	
