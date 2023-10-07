@@ -65,6 +65,8 @@ function startProgram(webGLCanvas, usePhong) {
 				currentlyPressedKeys: [],
 				movement: {
 					wheelRotation: 0.00,
+					frontWheelRotation: 0.00,
+					scooterFront: {rotation: 0.00, zIsPressed: false, xIsPressed: false}
 				},
 				lastTime: 0,
 				fpsInfo: {  // Brukes til å beregne og vise FPS (Frames Per Seconds):
@@ -328,8 +330,7 @@ function createCircle(gl, textureImage, input_x, input_y, input_z, isTop) {
 		normals.push(normal[1]);
 		normals.push(normal[2]);
 	}
-	console.log(positions.length / 3)
-	console.log(textureCoordinates.length / 2)
+	
 
 	const circleTexture = gl.createTexture();
 	bindTexture(gl, circleTexture, textureImage);
@@ -603,8 +604,7 @@ function createPartCircle(gl, textureImage, input_x, input_y, input_z, isTop, si
 		normals.push(normal[1]);
 		normals.push(normal[2]);
 	}
-	console.log(positions.length / 3)
-	console.log(textureCoordinates.length / 2)
+	
 
 	const circleTexture = gl.createTexture();
 	bindTexture(gl, circleTexture, textureImage);
@@ -1140,7 +1140,7 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(-4.7, 0, 0);
+	modelMatrix.translate(5, 0, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
@@ -1161,13 +1161,13 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.8, 0.85, 0);  //-0.5, 0.7, 0)
 	//sammenlegging
-	modelMatrix.rotate(0, 0, 0, 1);
-	modelMatrix.rotate(0, 0, 1, 0);
+	modelMatrix.rotate(renderInfo.movement.scooterFront.rotation, 0, 0, 1);
 	//sammenleggning slutt
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPoleAttachment(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.11, -0.85, 0);  //-0.12, -0.73, 0
+	modelMatrix.rotate(renderInfo.movement.frontWheelRotation, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawFrontWheelAttachment(renderInfo, camera, modelMatrix); 
 	modelMatrix = renderInfo.stack.peekMatrix();
@@ -1187,6 +1187,7 @@ function drawScooter(renderInfo, camera) {
 	drawSteeringPole(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(0.5, 4, 0);
+	modelMatrix.rotate(renderInfo.movement.frontWheelRotation, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringAttachment(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
@@ -1316,6 +1317,7 @@ function drawFrontWheelAttachment(renderInfo, camera, modelMatrix){
 function drawSteeringPole(renderInfo, camera, modelMatrix) {
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.rotate(97, 1, 0, 0);
+	modelMatrix.rotate(-renderInfo.movement.frontWheelRotation, 0, 0, 1);
 	modelMatrix.scale(0.18, 0.18, 8);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringPoleBuffer);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringPoleBuffer.topCircle);
@@ -1378,4 +1380,18 @@ function rotation(renderInfo){
 	if (renderInfo.currentlyPressedKeys['KeyO']){
 		renderInfo.light.lightPosition.z -= 0.1;
 	}
+
+	//Scooter movement
+
+	if (renderInfo.currentlyPressedKeys['KeyV']){
+		if (renderInfo.movement.frontWheelRotation < 45) {
+		renderInfo.movement.frontWheelRotation += 1};
+	
+	}
+	if (renderInfo.currentlyPressedKeys['KeyB']){
+		if (renderInfo.movement.frontWheelRotation > -45) {
+			renderInfo.movement.frontWheelRotation -= 1};
+	}
+
+	
 }

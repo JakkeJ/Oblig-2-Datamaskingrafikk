@@ -125,10 +125,6 @@ export function createTexturedCube() {
                                     0,0,-1) //back
     
 
-    let cubePositions = new Float32Array(positionArray);
-    let cubeTextures = new Float32Array(textureArray);
-    let cubeNormals = new Float32Array(normalArray);
-
     return {
         positionArray,
         textureArray,
@@ -271,10 +267,6 @@ export function createTexturedTrapezoid() {
                                     0,0,-1,
                                     0,0,-1) //back
     
-
-    let cubePositions = new Float32Array(positionArray);
-    let cubeTextures = new Float32Array(textureArray);
-    let cubeNormals = new Float32Array(normalArray);
 
     return {
         positionArray,
