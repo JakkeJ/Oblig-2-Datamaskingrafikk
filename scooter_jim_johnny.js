@@ -5,36 +5,36 @@ import {isPowerOfTwo1, vectorToString} from "./base/lib/utility-functions.js";
 import {ImageLoader} from "./base/helpers/ImageLoader.js";
 import {Stack} from "./base/helpers/Stack.js";
 import { createTexturedCube, createTexturedTrapezoid } from './shapes.js';
+import {niceColors} from "./base/lib/utility-functions.js";
 
-/**
- * MERK: Hvilket shaderpar som brukes bestemmes av check-boksen..
- */
 export function main() {
 	// Oppretter et webGLCanvas for WebGL-tegning:
 	const webGLCanvas = new WebGLCanvas('myCanvas', document.body, window.innerWidth, window.innerHeight);
-
-	const checkBox = document.getElementById("phongCheckBox");
-	checkBox.addEventListener("click", (event) => {
-		startProgram(webGLCanvas, checkBox.checked);
-	});
-	startProgram(webGLCanvas, false);
+	startProgram(webGLCanvas, true);
 }
 
 function startProgram(webGLCanvas, usePhong) {
-
 	// Starter med å laste teksturer:
 	let imageLoader = new ImageLoader();
 	let textureUrls = [
 		'./base/textures/textureBoard2.png',
 		'./base/textures/wheelTexture-2.png',
-		'./base/textures/greyTexture.png'
+		'./base/textures/greyTexture.png',
+		'./base/textures/darkblueTexture.png',
+		'./base/textures/darkGreyTexture.png',
+		'./base/textures/handlebarTexture.png'
 	];
-		imageLoader.load((textureImages) => {
+	const chromeColor = niceColors.chrome;
+	const dullColor = niceColors.dullChrome;
+	imageLoader.load((textureImages) => {
 		const textureImage = textureImages[0];
-		const textureImage2 = textureImages[1];
-		const textureImage3 = textureImages[2];
-		if (isPowerOfTwo1(textureImage.width) && isPowerOfTwo1(textureImage2.height)) {
-			// Fortsetter:
+		const wheelTexture = textureImages[1];
+		const greyTexture = textureImages[2];
+		const darkblueTexture = textureImages[3];
+		const darkGreyTexture = textureImages[4];
+		const handlebarTexture = textureImages[5];
+		if (isPowerOfTwo1(textureImage.width) && isPowerOfTwo1(wheelTexture.height)) {
+
 			const renderInfo = {
 				gl: webGLCanvas.gl,
 				baseShader: initBaseShaders(webGLCanvas.gl),
@@ -42,22 +42,19 @@ function startProgram(webGLCanvas, usePhong) {
 				stack: new Stack(),
 
 				coordBuffers: initCoordBuffers(webGLCanvas.gl),
-				wheelRimBuffers: createCylinder(webGLCanvas.gl, textureImage, textureImage2, 0, 0, 0, 0, 0.35),
-				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
-				rearWheelCoverBuffers: createRearWheelCover(webGLCanvas.gl, textureImage3, textureImage2, 0, 0, 0, 0, 0.6),
+				wheelRimBuffers: createCylinder(webGLCanvas.gl, textureImage, wheelTexture, 0, 0, 0, 0, 0.35),
+				torusBuffers: createTorus(webGLCanvas.gl, wheelTexture),
+				rearWheelCoverBuffers: createRearWheelCover(webGLCanvas.gl, darkblueTexture, darkblueTexture, 0, 0, 0, 0, 0.6),
 				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage, 5, 1, 20, 2.5),
-				rearBoxBuffers: createRearBox(webGLCanvas.gl, textureImage3),
-				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, textureImage3),
-				axleBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
-				steeringPoleAttachmentBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
-				frontBoxBuffers: initFrontBoxBuffers(webGLCanvas.gl, textureImage3),
-				steeringPoleBuffer: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
-				steeringAttachementBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
-				steeringBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
-				handlebarBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
-				handleBuffers: createCylinder(webGLCanvas.gl, textureImage3, textureImage3, 0, 0, 0, 0, 1),
-
-
+				rearBoxBuffers: createRearBox(webGLCanvas.gl, darkblueTexture),
+				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, darkblueTexture),
+				axleBuffers: createCylinder(webGLCanvas.gl, darkGreyTexture, darkGreyTexture, 0, 0, 0, 0, 1),
+				steeringPoleAttachmentBuffers: createCylinder(webGLCanvas.gl, darkblueTexture, darkblueTexture, 0, 0, 0, 0, 1),
+				frontBoxBuffers: initFrontBoxBuffers(webGLCanvas.gl, darkblueTexture),
+				steeringPoleBuffer: createCylinder(webGLCanvas.gl, darkblueTexture, darkblueTexture, 0, 0, 0, 0, 1),
+				steeringAttachmentBuffers: createCylinder(webGLCanvas.gl, darkblueTexture, darkblueTexture, 0, 0, 0, 0, 1),
+				handlebarBuffers: createCylinder(webGLCanvas.gl, greyTexture, greyTexture, 0, 0, 0, 0, 1),
+				handleBuffers: createCylinder(webGLCanvas.gl, handlebarTexture, handlebarTexture, 0, 0, 0, 0, 1),
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
 				
@@ -75,8 +72,18 @@ function startProgram(webGLCanvas, usePhong) {
 				},
 				light: {
 					lightPosition: {x: 0.00, y: 7.00, z: 0.00},
-					diffuseLightColor: {r: 0.3, g: 0.3, b:0.3},
-					ambientLightColor: {r: 0.1, g: 0.1, b:0.1},
+
+					ambientLightColor: chromeColor.ambient,
+					diffuseLightColor: chromeColor.diffuse,
+					specularLightColor: chromeColor.specular,
+					shininess: chromeColor.shininess,
+					intensity: chromeColor.intensity,
+
+					ambientDullLightColor: dullColor.ambient,
+					diffuseDullLightColor: dullColor.diffuse,
+					specularDullLightColor: dullColor.specular,
+					shininessDull: dullColor.shininess,
+					intensityDull: dullColor.intensity,
 				},
 			};
 
@@ -87,8 +94,9 @@ function startProgram(webGLCanvas, usePhong) {
 			camera.camPosZ = 29.7;
 
 			document.getElementById('light-position').innerHTML = vectorToString(renderInfo.light.lightPosition);
-			document.getElementById('diffuse-light-color').innerHTML = vectorToString(renderInfo.light.diffuseLightColor);
 			document.getElementById('ambient-light').innerHTML = vectorToString(renderInfo.light.ambientLightColor);
+			document.getElementById('diffuse-light-color').innerHTML = vectorToString(renderInfo.light.diffuseLightColor);
+			document.getElementById('specular-light-color').innerHTML = vectorToString(renderInfo.light.specularLightColor);
 			document.getElementById('camera').innerHTML = camera.toString();
 
 			animate( 0, renderInfo, camera);
@@ -154,7 +162,7 @@ function initBaseShaders(gl) {
  * @param gl
  * @returns {{uniformLocations: {normalMatrix: WebGLUniformLocation, lightPosition: WebGLUniformLocation, projectionMatrix: WebGLUniformLocation, diffuseLightColor: WebGLUniformLocation, modelMatrix: WebGLUniformLocation, ambientLightColor: WebGLUniformLocation, modelViewMatrix: WebGLUniformLocation}, attribLocations: {vertexNormal: GLint, vertexPosition: GLint}, program: (null|*)}}
  */
-function initDiffuseLightTextureShader(gl, usePhongShading = false) {
+function initDiffuseLightTextureShader(gl, usePhongShading = true) {
 
 	if (usePhongShading)
 		document.getElementById('gourad-phong').innerHTML = 'PHONG';
@@ -189,8 +197,13 @@ function initDiffuseLightTextureShader(gl, usePhongShading = false) {
 			normalMatrix: gl.getUniformLocation(glslShader.shaderProgram, 'uNormalMatrix'),
 
 			lightPosition: gl.getUniformLocation(glslShader.shaderProgram, 'uLightPosition'),
+			cameraPosition: gl.getUniformLocation(glslShader.shaderProgram, 'uCameraPosition'),
 			ambientLightColor: gl.getUniformLocation(glslShader.shaderProgram, 'uAmbientLightColor'),
 			diffuseLightColor: gl.getUniformLocation(glslShader.shaderProgram, 'uDiffuseLightColor'),
+			specularLightColor: gl.getUniformLocation(glslShader.shaderProgram, 'uSpecularLightColor'),
+
+			shininess: gl.getUniformLocation(glslShader.shaderProgram, 'uShininess'),
+			intensity: gl.getUniformLocation(glslShader.shaderProgram, 'uIntensity'),
 
 			sampler: gl.getUniformLocation(glslShader.shaderProgram, 'uSampler'),
 		},
@@ -330,7 +343,6 @@ function createCircle(gl, textureImage, input_x, input_y, input_z, isTop) {
 		normals.push(normal[1]);
 		normals.push(normal[2]);
 	}
-	
 
 	const circleTexture = gl.createTexture();
 	bindTexture(gl, circleTexture, textureImage);
@@ -604,7 +616,6 @@ function createPartCircle(gl, textureImage, input_x, input_y, input_z, isTop, si
 		normals.push(normal[1]);
 		normals.push(normal[2]);
 	}
-	
 
 	const circleTexture = gl.createTexture();
 	bindTexture(gl, circleTexture, textureImage);
@@ -942,10 +953,7 @@ function createRearBox(gl, textureImage) {
 		textureObject: boardTexture,
 		normal: normalsBuffer,
 		vertexCount: rearBox.positionArray.length/3
-
 	}
-
-	
 }
 
 function bindTexture(gl, texture, textureImage) {
@@ -1011,15 +1019,31 @@ function connectNormalAttribute(gl, shader, normalBuffer) {
 }
 
 function connectAmbientUniform(gl, shader, color) {
-	gl.uniform3f(shader.uniformLocations.ambientLightColor, color.r,color.g,color.b);
+	gl.uniform4f(shader.uniformLocations.ambientLightColor, color.r,color.g,color.b, color.a);
 }
 
 function connectDiffuseUniform(gl, shader,color) {
-	gl.uniform3f(shader.uniformLocations.diffuseLightColor, color.r,color.g,color.b);
+	gl.uniform4f(shader.uniformLocations.diffuseLightColor, color.r,color.g,color.b, color.a);
 }
 
 function connectLightPositionUniform(gl, shader, position) {
 	gl.uniform3f(shader.uniformLocations.lightPosition, position.x,position.y,position.z);
+}
+
+function connectCameraPositionUniform(gl, shader, camera) {
+	gl.uniform3f(shader.uniformLocations.cameraPosition, camera.camPosX, camera.camPosY, camera.camPosZ);
+}
+
+function connectSpecularUniform(gl, shader,color) {
+	gl.uniform4f(shader.uniformLocations.specularLightColor, color.r, color.g, color.b, color.a);
+}
+
+function connectShininessUniform(gl, shader, value) {
+	gl.uniform1f(shader.uniformLocations.shininess, value);
+}
+
+function connectIntensityUniform(gl, shader, value) {
+	gl.uniform1f(shader.uniformLocations.intensity, value);
 }
 
 /**
@@ -1140,7 +1164,8 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(5, 0, 0);
+	modelMatrix.scale(1, 1, 1);
+	modelMatrix.translate(0, 0, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
@@ -1199,7 +1224,7 @@ function drawScooter(renderInfo, camera) {
 
 }
 
-function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, modelMatrix, buffer) {
+function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, modelMatrix, buffer, dull = false) {
 	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 	camera.set();
 	let modelViewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
@@ -1210,10 +1235,25 @@ function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, mo
 	let normalMatrix = mat3.create();
 	mat3.normalFromMat4(normalMatrix, modelMatrix.elements);
 	renderInfo.gl.uniformMatrix3fv(renderInfo.diffuseLightTextureShader.uniformLocations.normalMatrix, false, normalMatrix);
-
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
 	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
+	if (dull === false) {
+		connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
+		connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
+		connectSpecularUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.specularLightColor);
+		connectShininessUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.shininess);
+		connectIntensityUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.intensity);
+	}
+
+	if (dull === true) {
+		connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientDullLightColor);
+		connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseDullLightColor);
+		connectSpecularUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.specularDullLightColor);
+		connectShininessUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.shininessDull);
+		connectIntensityUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.intensityDull);
+	}
+
+
+	connectCameraPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, camera);
 
 	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.position);
 	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, buffer.normal);
@@ -1237,7 +1277,7 @@ function drawRearWheelCover(renderInfo, camera, modelMatrix) {
 function drawWheel(renderInfo, camera, modelMatrix) {
 	modelMatrix.scale(0.5, 0.5, 1);
 	modelMatrix.rotate(renderInfo.movement.wheelRotation*3, 0, 0, 1)
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "elements", modelMatrix, renderInfo.torusBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "elements", modelMatrix, renderInfo.torusBuffers, true);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.wheelRimBuffers.topCircle);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.wheelRimBuffers.bottomCircle);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.wheelRimBuffers);
@@ -1272,7 +1312,7 @@ function drawTexturedTrapezoid(renderInfo, camera, modelMatrix) {
 function drawBoard(renderInfo, camera, modelMatrix) {
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.scale(0.5, 0.15, 4);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.boardBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.boardBuffers, true);
 
 	modelMatrix.translate(0.8,0,1.1);
 	modelMatrix.scale(0.2, 1, 0.1);
@@ -1326,9 +1366,9 @@ function drawSteeringPole(renderInfo, camera, modelMatrix) {
 
 function drawSteeringAttachment(renderInfo, camera, modelMatrix) {
 	modelMatrix.scale(0.2, 0.2, 0.8);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringAttachementBuffers);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringAttachementBuffers.topCircle);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringAttachementBuffers.bottomCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.steeringAttachmentBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringAttachmentBuffers.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.steeringAttachmentBuffers.bottomCircle);
 }
 
 function drawHandlebar(renderInfo, camera, modelMatrix) {
@@ -1340,14 +1380,14 @@ function drawHandlebar(renderInfo, camera, modelMatrix) {
 
 function drawHandle(renderInfo, camera, modelMatrix) {
 	modelMatrix.scale(0.16, 0.16, 1.5);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.handleBuffers);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.topCircle);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.handleBuffers, true);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.topCircle, true);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle, true);
 
 	modelMatrix.translate(0, 0, -1.935);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.handleBuffers);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.topCircle);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.handleBuffers, true);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.topCircle, true);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle, true);
 }
 
 function rotation(renderInfo){
