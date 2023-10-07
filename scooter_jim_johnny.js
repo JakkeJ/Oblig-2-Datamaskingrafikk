@@ -25,7 +25,7 @@ function startProgram(webGLCanvas, usePhong) {
 	// Starter med å laste teksturer:
 	let imageLoader = new ImageLoader();
 	let textureUrls = [
-		'./base/textures/textureBoard.png',
+		'./base/textures/textureBoard2.png',
 		'./base/textures/wheelTexture-2.png',
 		'./base/textures/greyTexture.png'
 	];
@@ -44,6 +44,7 @@ function startProgram(webGLCanvas, usePhong) {
 				coordBuffers: initCoordBuffers(webGLCanvas.gl),
 				wheelRimBuffers: createCylinder(webGLCanvas.gl, textureImage, textureImage2, 0, 0, 0, 0, 0.35),
 				torusBuffers: createTorus(webGLCanvas.gl, textureImage2),
+				rearWheelCoverBuffers: createRearWheelCover(webGLCanvas.gl, textureImage3, textureImage2, 0, 0, 0, 0, 0.6),
 				boardBuffers: createBoard(webGLCanvas.gl, textureImage, textureImage, 5, 1, 20, 2.5),
 				rearBoxBuffers: createRearBox(webGLCanvas.gl, textureImage3),
 				trapezoidBuffers: initTrapezoidBuffers(webGLCanvas.gl, textureImage3),
@@ -71,17 +72,17 @@ function startProgram(webGLCanvas, usePhong) {
 					lastTimeStamp: 0
 				},
 				light: {
-					lightPosition: {x: 0.00, y: 0.00, z: 0.00},
-					diffuseLightColor: {r: 0.5, g: 0.5, b:0.5},
-					ambientLightColor: {r: 0.0, g: 0.0, b:0.0},
+					lightPosition: {x: 0.00, y: 7.00, z: 0.00},
+					diffuseLightColor: {r: 0.3, g: 0.3, b:0.3},
+					ambientLightColor: {r: 0.1, g: 0.1, b:0.1},
 				},
 			};
 
 			initKeyPress(renderInfo);
 			const camera = new Camera(renderInfo.gl, renderInfo.currentlyPressedKeys);
-			camera.camPosX = 5.5;
-			camera.camPosY = 1.5;
-			camera.camPosZ = -2.0;
+			camera.camPosX = 15.3;
+			camera.camPosY = 16.4;
+			camera.camPosZ = 29.7;
 
 			document.getElementById('light-position').innerHTML = vectorToString(renderInfo.light.lightPosition);
 			document.getElementById('diffuse-light-color').innerHTML = vectorToString(renderInfo.light.diffuseLightColor);
@@ -289,7 +290,7 @@ function initFrontBoxBuffers(gl, textureImage){
 
 	return {
 		position: basePlatePositionBuffer,
-		normals: basePlateNormalsBuffer,
+		normal: basePlateNormalsBuffer,
 		texture: basePlateTextureBuffer,
 		vertexCount: basePlate.positionArray.length/3,
 		textureObject: cubeTexture,
@@ -354,8 +355,6 @@ function bufferBinder(gl, buffer, data) {
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 	gl.bindBuffer(gl.ARRAY_BUFFER, null);
 }
-
-
 
 function createTorus(gl, textureImage) {
 	const color = {red:0.8, green:0.1, blue:0.6, alpha:1};
@@ -467,6 +466,162 @@ function createTorus(gl, textureImage) {
 		index: indexBuffer,
 		vertexCount: positions.length/3,
 		indicesCount: indices.length
+	};
+}
+
+function createRearWheelCover(gl, wallTextureImage, textureImage, xStart, yStart, xStop, yStop, thickness) {
+	let innerWall = createRearWheelCoverWall(gl, wallTextureImage, textureImage, xStart, yStart, xStop, yStop, thickness, 0.675);
+	let outerWall = createRearWheelCoverWall(gl, wallTextureImage, textureImage, xStart, yStart, xStop, yStop, thickness, 0.72);
+	let positions = [];
+	let normals = [];
+	let textureCoordinates = [];
+
+	for (let i = 0; i < outerWall.positionRaw.length; i += 3) {
+		positions.push(outerWall.positionRaw[i], outerWall.positionRaw[i + 1], outerWall.positionRaw[i + 2]);
+		textureCoordinates = textureCoordinates.concat(i / outerWall.positionRaw.length, 0);
+
+		positions.push(innerWall.positionRaw[i], innerWall.positionRaw[i + 1], innerWall.positionRaw[i + 2]);
+		textureCoordinates = textureCoordinates.concat(i / outerWall.positionRaw.length, 1);
+
+		let normalOuter = calculateSphereNormalForVertex(outerWall.positionRaw[i], outerWall.positionRaw[i + 1], outerWall.positionRaw[i + 2]);
+		normals.push(normalOuter[0], normalOuter[1], normalOuter[2]);
+
+		let normalInner = calculateSphereNormalForVertex(innerWall.positionRaw[i], innerWall.positionRaw[i + 1], innerWall.positionRaw[i + 2]);
+		normals.push(normalInner[0], normalInner[1], normalInner[2]);
+	}
+
+	for (let i = 0; i < outerWall.positionRaw.length; i += 6) {
+		positions.push(outerWall.positionRaw[i], outerWall.positionRaw[i + 1], outerWall.positionRaw[i + 2]);
+		textureCoordinates = textureCoordinates.concat(i / outerWall.positionRaw.length, 0);
+
+		positions.push(innerWall.positionRaw[i], innerWall.positionRaw[i + 1], innerWall.positionRaw[i + 2]);
+		textureCoordinates = textureCoordinates.concat(i / outerWall.positionRaw.length, 1);
+
+		let normalOuter = calculateSphereNormalForVertex(outerWall.positionRaw[i], outerWall.positionRaw[i + 1], outerWall.positionRaw[i + 2]);
+		normals.push(normalOuter[0], normalOuter[1], normalOuter[2]);
+
+		let normalInner = calculateSphereNormalForVertex(innerWall.positionRaw[i], innerWall.positionRaw[i + 1], innerWall.positionRaw[i + 2]);
+		normals.push(normalInner[0], normalInner[1], normalInner[2]);
+	}
+
+	for (let i = outerWall.positionRaw.length; i >= 0; i -= 6) {
+		positions.push(outerWall.positionRaw[i + 3], outerWall.positionRaw[i + 4], outerWall.positionRaw[i + 5]);
+		textureCoordinates = textureCoordinates.concat(i / outerWall.positionRaw.length, 0);
+
+		positions.push(innerWall.positionRaw[i + 3], innerWall.positionRaw[i + 4], innerWall.positionRaw[i + 5]);
+		textureCoordinates = textureCoordinates.concat(i / outerWall.positionRaw.length, 1);
+
+		let normalOuter = calculateSphereNormalForVertex(outerWall.positionRaw[i], outerWall.positionRaw[i + 1], outerWall.positionRaw[i + 2]);
+		normals.push(normalOuter[0], normalOuter[1], normalOuter[2]);
+
+		let normalInner = calculateSphereNormalForVertex(innerWall.positionRaw[i], innerWall.positionRaw[i + 1], innerWall.positionRaw[i + 2]);
+		normals.push(normalInner[0], normalInner[1], normalInner[2]);
+	}
+
+	const wheelCoverSideTexture = gl.createTexture();
+	bindTexture(gl, wheelCoverSideTexture, wallTextureImage);
+
+	const textureBuffer = gl.createBuffer();
+	const positionBuffer = gl.createBuffer();
+	const normalBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
+	bufferBinder(gl, positionBuffer, positions);
+	bufferBinder(gl, normalBuffer, normals);
+
+	return {
+		outerWall: outerWall,
+		innerWall: innerWall,
+		position: positionBuffer,
+		normal: normalBuffer,
+		texture: textureBuffer,
+		textureObject: wheelCoverSideTexture,
+		vertexCount: positions.length/3
+	};
+}
+
+function createRearWheelCoverWall(gl, wallTextureImage, textureImage, xStart, yStart, xStop, yStop, thickness, size) {
+	let topCircle = createPartCircle(gl, textureImage, xStart, yStart, thickness/2, true, size);
+	let bottomCircle = createPartCircle(gl, textureImage, xStop, yStop, -(thickness/2), false, size);
+	let positions = [];
+	let normals = [];
+	let textureCoordinates = [];
+
+	for (let i = 0; i <= topCircle.positionRaw.length; i += 3){
+		positions.push(topCircle.positionRaw[i], topCircle.positionRaw[i+1], topCircle.positionRaw[i+2])
+		textureCoordinates = textureCoordinates.concat(i/(topCircle.positionRaw.length),0);
+		positions.push(bottomCircle.positionRaw[i], bottomCircle.positionRaw[i+1], bottomCircle.positionRaw[i+2])
+		textureCoordinates = textureCoordinates.concat(i/(topCircle.positionRaw.length),1);
+		let normal = calculateSphereNormalForVertex(topCircle.positionRaw[i], topCircle.positionRaw[i+1], topCircle.positionRaw[i+2]);
+		normals.push(normal[0], normal[1], normal[2])
+		normal = calculateSphereNormalForVertex(bottomCircle.positionRaw[i], bottomCircle.positionRaw[i+1], bottomCircle.positionRaw[i+2]);
+		normals.push(normal[0], normal[1], normal[2])
+	}
+
+	const cylinderWallTexture = gl.createTexture();
+	bindTexture(gl, cylinderWallTexture, wallTextureImage);
+
+	const textureBuffer = gl.createBuffer();
+	const positionBuffer = gl.createBuffer();
+	const normalBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
+	bufferBinder(gl, positionBuffer, positions);
+	bufferBinder(gl, normalBuffer, normals);
+
+	return {
+		topCircle: topCircle,
+		bottomCircle: bottomCircle,
+		position: positionBuffer,
+		positionRaw: positions,
+		normal: normalBuffer,
+		texture: textureBuffer,
+		textureObject: cylinderWallTexture,
+		vertexCount: positions.length/3
+	};
+}
+
+function createPartCircle(gl, textureImage, input_x, input_y, input_z, isTop, size) {
+	let positions = [];
+	let toPI = 2 * Math.PI;
+	let stepGrader = 360 / 40;
+	let step = (Math.PI / 180) * stepGrader;
+	let textureCoordinates = [];
+	let normals = [];
+	let maxTextureCoordinate = 1;
+
+	for (let phi = 0.0; phi <= (8 * Math.PI) / 12; phi += step) {
+		let x = Math.cos(phi) * size + input_x;
+		let y = Math.sin(phi) * size + input_y;
+		let z = input_z;
+		positions = positions.concat(x, y, z);
+		let u = ((Math.cos(phi) + 1) / 2) * maxTextureCoordinate;
+		let v = ((Math.sin(phi) + 1) / 2) * maxTextureCoordinate;
+		textureCoordinates = textureCoordinates.concat(u,v);
+		let normal = isTop ? [0, 0, 1] : [0, 0, -1];
+		normals.push(normal[0]);
+		normals.push(normal[1]);
+		normals.push(normal[2]);
+	}
+	console.log(positions.length / 3)
+	console.log(textureCoordinates.length / 2)
+
+	const circleTexture = gl.createTexture();
+	bindTexture(gl, circleTexture, textureImage);
+	const textureBuffer = gl.createBuffer();
+	bufferBinder(gl, textureBuffer, textureCoordinates);
+	const positionBuffer = gl.createBuffer();
+	bufferBinder(gl, positionBuffer, positions);
+	const normalBuffer = gl.createBuffer();
+	bufferBinder(gl, normalBuffer, normals);
+
+	return  {
+		position: positionBuffer,
+		positionRaw: positions,
+		normal: normalBuffer,
+		texture: textureBuffer,
+		textureObject: circleTexture,
+		vertexCount: positions.length/3,
 	};
 }
 
@@ -767,176 +922,6 @@ function createBoard(gl, textureImage) {
 }
 
 function createRearBox(gl, textureImage) {
-	/*let normals = [];
-	let positions = [
-		//Forsiden (pos):
-		-1, 1, 1,
-		-1,-1, 1,
-		1,-1, 1,
-
-		-1,1,1,
-		1,-1,1,
-		1,1,1,
-
-		//Høyre side:
-		1,1,1,
-		1,-1,1,
-		1,-1,-1,
-
-		1,1,1,
-		1,-1,-1,
-		1,1,-1,
-
-		//Baksiden (pos):
-		1,-1,-1,
-		-1,-1,-1,
-		1, 1,-1,
-
-		-1,-1,-1,
-		-1,1,-1,
-		1,1,-1,
-
-		//Venstre side:
-		-1,-1,-1,
-		-1,1,1,
-		-1,1,-1,
-
-		-1,-1,1,
-		-1,1,1,
-		-1,-1,-1,
-
-		//Topp:
-		-1,1,1,
-		1,1,1,
-		-1,1,-1,
-
-		-1,1,-1,
-		1,1,1,
-		1,1,-1,
-
-		//Bunn:
-		-1,-1,-1,
-		1,-1,1,
-		-1,-1,1,
-
-		-1,-1,-1,
-		1,-1,-1,
-		1,-1,1,
-	];
-
-	// Front face normals
-	for (let i = 0; i < 6; i++) {
-		normals.push(0, 0, 1);
-	}
-
-	// Right face normals
-	for (let i = 0; i < 6; i++) {
-		normals.push(1, 0, 0);
-	}
-
-	// Back face normals
-	for (let i = 0; i < 6; i++) {
-		normals.push(0, 0, -1);
-	}
-
-	// Left face normals
-	for (let i = 0; i < 6; i++) {
-		normals.push(-1, 0, 0);
-	}
-
-	// Top face normals
-	for (let i = 0; i < 6; i++) {
-		normals.push(0, 1, 0);
-	}
-
-	// Bottom face normals
-	for (let i = 0; i < 6; i++) {
-		normals.push(0, -1, 0);
-	}
-
-	let color = {red: 1.0, green: 0.45, blue: 0.9, alpha: 1.0}
-	let colors = [];
-	//Samme farge på alle sider:
-	for (let i = 0; i < 36; i++) {
-		colors.push(color.red, color.green, color.blue, color.alpha);
-	}
-
-	// Teksturkoordinater / UV-koordinater:
-	//Setter uv-koordinater for hver enkelt side av terningen vha. en enkel tekstur.
-	//Teksturen / .png-fila må se slik ut, dvs. 2 linjer og 3 kolonner, der hver celle
-	//inneholder et "bilde" av et tall (1-6).
-	// -------------
-	// | 1 | 2 | 3 |
-	// |-----------|
-	// | 4 | 5 | 6 |
-	// -------------
-
-	//Holder etter hvert p� alle uv-koordinater for terningen.
-	let textureCoordinates = [];
-	//Front (1-tallet):
-	let tl1=[0,0];
-	let bl1=[0.1,0];
-	let tr1=[0,0.1];
-	let br1=[0.1,0.1];
-	textureCoordinates = textureCoordinates.concat(tl1, bl1, br1, tl1, br1, tr1);
-
-	//Høyre side (2-tallet):
-	let tl2=[0,0];
-	let bl2=[0.13,0];
-	let tr2=[0,0.2];
-	let br2=[0.2,0.13];
-	textureCoordinates = textureCoordinates.concat(tl2, bl2, br2, tl2, br2, tr2);
-
-	//Baksiden (6-tallet):
-	let tl3=[0,0];
-	let bl3=[0.2,0];
-	let tr3=[0,0.13];
-	let br3=[0.2,0.13];
-	textureCoordinates = textureCoordinates.concat(bl3, br3, tl3, br3, tr3, tl3);
-
-	//Venstre (5-tallet):
-	let tl4=[0,0];
-	let bl4=[0.25,0];
-	let tr4=[0,1];
-	let br4=[0.2,1];
-	textureCoordinates = textureCoordinates.concat(bl4, tr4, tl4, br4, tr4, bl4);
-
-	//Toppen (3-tallet):
-	let tl5=[0.5,1];
-	let bl5=[0.5,0];
-	let tr5=[1,1];
-	let br5=[1,0];
-	textureCoordinates = textureCoordinates.concat(bl5, br5, tl5, tl5, br5, tr5);
-
-	//Bunnen (4-tallet):
-	let tl6=[0,1];
-	let bl6=[0,0];
-	let tr6=[0.5,1];
-	let br6=[0.5,0];
-	textureCoordinates = textureCoordinates.concat(tr6, bl6, br6,tr6,tl6, bl6); 
-
-
-
-	const positionBuffer = gl.createBuffer();
-	bufferBinder(gl, positionBuffer, positions);
-
-	const boardTexture = gl.createTexture();
-	bindTexture(gl, boardTexture, textureImage);
-
-	const textureBuffer = gl.createBuffer();
-	bufferBinder(gl, textureBuffer, textureCoordinates);
-
-	const normalsBuffer = gl.createBuffer();
-	bufferBinder(gl, normalsBuffer, normals);
-
-	return  {
-		position: positionBuffer,
-		texture: textureBuffer,
-		textureObject: boardTexture,
-		normal: normalsBuffer,
-		vertexCount: positions.length/3
-	}; */
-
 	let rearBox = createTexturedCube()
 
 	const positionBuffer = gl.createBuffer();
@@ -1155,13 +1140,15 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(0, 0, 0);
+	modelMatrix.translate(-4.7, 0, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.translate(4.65, 0, 0);  
+	modelMatrix.translate(4.65, 0, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
+	drawRearWheelCover(renderInfo, camera, modelMatrix);
 	drawWheel(renderInfo, camera, modelMatrix);
+
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(0, 0, 0);
 	drawAxle(renderInfo, camera, modelMatrix);
@@ -1239,6 +1226,13 @@ function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, mo
 	}
 }
 
+function drawRearWheelCover(renderInfo, camera, modelMatrix) {
+	modelMatrix.rotate(65, 0, 0, 1);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.rearWheelCoverBuffers.outerWall);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.rearWheelCoverBuffers.innerWall);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.rearWheelCoverBuffers);
+}
+
 function drawWheel(renderInfo, camera, modelMatrix) {
 	modelMatrix.scale(0.5, 0.5, 1);
 	modelMatrix.rotate(renderInfo.movement.wheelRotation*3, 0, 0, 1)
@@ -1277,44 +1271,15 @@ function drawTexturedTrapezoid(renderInfo, camera, modelMatrix) {
 function drawBoard(renderInfo, camera, modelMatrix) {
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.scale(0.5, 0.15, 4);
-	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.boardBuffers);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.position);
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.normal);
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.boardBuffers.texture, renderInfo.boardBuffers.textureObject);
-	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.boardBuffers);
 
 	modelMatrix.translate(0.8,0,1.1);
 	modelMatrix.scale(0.2, 1, 0.1);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.position);
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.normal);
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.texture, renderInfo.rearBoxBuffers.textureObject);
-	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.rearBoxBuffers);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.rearBoxBuffers);
 
-	
 	modelMatrix.translate(-8,0,0);
 	modelMatrix.rotate(0, 0, 1 ,0)
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.position);
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.normal);
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.rearBoxBuffers.texture, renderInfo.rearBoxBuffers.textureObject);
-	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.rearBoxBuffers);
-}
-
-function drawCube(renderInfo, gl, camera, modelMatrix, buffer) {
-	camera.set();
-	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
-	renderInfo.gl.uniformMatrix4fv(renderInfo.diffuseLightTextureShader.uniformLocations.projectionMatrix, false, camera.projectionMatrix.elements);
-	renderInfo.gl.drawArrays(renderInfo.gl.TRIANGLES, 0, buffer.vertexCount);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.rearBoxBuffers);
 }
 
 function drawAxle(renderInfo, camera, modelMatrix) {
@@ -1334,48 +1299,18 @@ function drawSteeringPoleAttachment(renderInfo, camera, modelMatrix) {
 }
 
 function drawFrontWheelAttachment(renderInfo, camera, modelMatrix){
-	renderInfo.gl.useProgram(renderInfo.diffuseLightTextureShader.program);
-
 	modelMatrix.rotate(90, 0, 1, 0);
 	modelMatrix.rotate(7, 1, 0, 0);
-	modelMatrix.scale(0.34, 0.04, 0.36) //0.4, 0.04, 0.34
-	
-
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.normals);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.texture, renderInfo.frontBoxBuffers.textureObject);
-	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.frontBoxBuffers);
-
+	modelMatrix.scale(0.34, 0.04, 0.36)
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.frontBoxBuffers);
 	modelMatrix.translate(0.87, -11, 0)
 	modelMatrix.rotate(0, 0, 0, 1);
 	modelMatrix.scale(0.1, 12, 0.5)
-
-
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.normals);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.texture, renderInfo.frontBoxBuffers.textureObject);
-	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.frontBoxBuffers);
-
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.frontBoxBuffers);
 	modelMatrix.translate(-17.3, 0, 0)
 	modelMatrix.rotate(0, 0, 0, 1);
 	modelMatrix.scale(1, 1, 1)
-
-	connectAmbientUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.ambientLightColor);
-	connectDiffuseUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.diffuseLightColor);
-	connectLightPositionUniform(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.light.lightPosition);
-	connectNormalAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.normals);
-	connectPositionAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.position);
-	connectTextureAttribute(renderInfo.gl, renderInfo.diffuseLightTextureShader, renderInfo.frontBoxBuffers.texture, renderInfo.frontBoxBuffers.textureObject);
-	drawCube(renderInfo, renderInfo.gl, camera, modelMatrix, renderInfo.frontBoxBuffers);
-
-
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.frontBoxBuffers);
 }
 
 function drawSteeringPole(renderInfo, camera, modelMatrix) {
@@ -1424,23 +1359,23 @@ function rotation(renderInfo){
 
 	//light position
 	if (renderInfo.currentlyPressedKeys['KeyI']){
-		renderInfo.light.lightPosition.y += 0.5;
+		renderInfo.light.lightPosition.y += 0.1;
 	}
 	if (renderInfo.currentlyPressedKeys['KeyK']){
-		renderInfo.light.lightPosition.y -= 0.5;
+		renderInfo.light.lightPosition.y -= 0.1;
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyL']){
-		renderInfo.light.lightPosition.x += 0.5;
+		renderInfo.light.lightPosition.x += 0.1;
 	}
 	if (renderInfo.currentlyPressedKeys['KeyJ']){
-		renderInfo.light.lightPosition.x -= 0.5;
+		renderInfo.light.lightPosition.x -= 0.1;
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyU']){
-		renderInfo.light.lightPosition.z += 0.5;
+		renderInfo.light.lightPosition.z += 0.1;
 	}
 	if (renderInfo.currentlyPressedKeys['KeyO']){
-		renderInfo.light.lightPosition.z -= 0.5;
+		renderInfo.light.lightPosition.z -= 0.1;
 	}
 }
