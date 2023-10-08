@@ -1,9 +1,6 @@
 export function createTexturedCube() {
 
     let positionArray = [
-
-          
-    
                         -1, 1, -1, //top
                         1, 1, -1,
                         -1, 1, 1,
@@ -53,23 +50,17 @@ export function createTexturedCube() {
                         -1, -1, -1,
                         1, 1, -1,
                         1, -1, -1,
-
-
-
-                    
                     ];
 
     let  textureArray = [];
     let normalArray = [];
-    
-   
+
     textureArray = textureArray.concat(0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1);   //top
     textureArray = textureArray.concat(1,1, 1,0, 0,0, 1,1, 0, 0, 0,1); //front
     textureArray = textureArray.concat(1,1, 0,0, 0,1, 1,1, 1, 0, 0,0);    //bottom
     textureArray = textureArray.concat(1,0, 0,1, 0,0, 1,1, 0, 1, 1,0);    //right
     textureArray = textureArray.concat(0,1, 0,0, 1,1, 0,0, 1, 0, 1,1);  //left
     textureArray = textureArray.concat(1,0, 1,1, 0,1, 1,0, 0, 1, 0,0); //back
-
 
     normalArray = normalArray.concat(
                                     0,1,0,
@@ -79,7 +70,6 @@ export function createTexturedCube() {
                                     0,1,0,
                                     0,1,0,
                                     0,1,0) //top
-
     normalArray = normalArray.concat(
                                     0,0,1,
                                     0,0,1,
@@ -96,7 +86,6 @@ export function createTexturedCube() {
                                     0,-1,0,
                                     0,-1,0,
                                     0,-1,0) //bottom
-
     normalArray = normalArray.concat(
                                     1,0,0,
                                     1,0,0,
@@ -105,7 +94,6 @@ export function createTexturedCube() {
                                     1,0,0,
                                     1,0,0,
                                     1,0,0) //right
-
     normalArray = normalArray.concat(
                                     -1,0,0,
                                     -1,0,0,
@@ -114,7 +102,6 @@ export function createTexturedCube() {
                                     -1,0,0,
                                     -1,0,0,
                                     -1,0,0) //left
-
     normalArray = normalArray.concat(
                                     0,0,-1,
                                     0,0,-1,
@@ -123,27 +110,17 @@ export function createTexturedCube() {
                                     0,0,-1,
                                     0,0,-1,
                                     0,0,-1) //back
-    
-
     return {
         positionArray,
         textureArray,
         normalArray
     };
-    
 }
 
-
-
 export function createTexturedTrapezoid() {
-
     let angle = 4.5;
     let length = 4;
-
     let positionArray = [
-
-          
-    
                         -1, angle, -1, //top
                         1, angle, -1,
                         -1, length, 1,
@@ -155,13 +132,11 @@ export function createTexturedTrapezoid() {
                         1, length, 1,  //front 
                         1, -length, 1,   
                         -1, -length, 1, 
-                       
 
                         1, length, 1,
                         -1, -length, 1,
                         -1, length, 1,  
 
-                       
                         1, -length, 1,
                         -1, -angle, -1, //bottom
                         -1, -length, 1, 
@@ -193,26 +168,16 @@ export function createTexturedTrapezoid() {
                         -1, -angle, -1,
                         1, angle, -1,
                         1, -angle, -1,
-
-
-                        
-
-
-
-                    
                     ];
-
     let  textureArray = [];
     let normalArray = [];
-    
-   
+
     textureArray = textureArray.concat(0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1);   //top
     textureArray = textureArray.concat(1,1, 1,0, 0,0, 1,1, 0, 0, 0,1); //front
     textureArray = textureArray.concat(1,1, 0,0, 0,1, 1,1, 1, 0, 0,0);    //bottom
     textureArray = textureArray.concat(1,0, 0,1, 0,0, 1,1, 0, 1, 1,0);    //right
     textureArray = textureArray.concat(0,1, 0,0, 1,1, 0,0, 1, 0, 1,1);  //left
     textureArray = textureArray.concat(1,0, 1,1, 0,1, 1,0, 0, 1, 0,0); //back
-
 
     normalArray = normalArray.concat(
                                     0,1,0,
@@ -222,7 +187,6 @@ export function createTexturedTrapezoid() {
                                     0,1,0,
                                     0,1,0,
                                     0,1,0) //top
-
     normalArray = normalArray.concat(
                                     0,0,1,
                                     0,0,1,
@@ -239,7 +203,6 @@ export function createTexturedTrapezoid() {
                                     0,-1,0,
                                     0,-1,0,
                                     0,-1,0) //bottom
-
     normalArray = normalArray.concat(
                                     1,0,0,
                                     1,0,0,
@@ -248,7 +211,6 @@ export function createTexturedTrapezoid() {
                                     1,0,0,
                                     1,0,0,
                                     1,0,0) //right
-
     normalArray = normalArray.concat(
                                     -1,0,0,
                                     -1,0,0,
@@ -257,7 +219,6 @@ export function createTexturedTrapezoid() {
                                     -1,0,0,
                                     -1,0,0,
                                     -1,0,0) //left
-
     normalArray = normalArray.concat(
                                     0,0,-1,
                                     0,0,-1,
@@ -266,12 +227,9 @@ export function createTexturedTrapezoid() {
                                     0,0,-1,
                                     0,0,-1,
                                     0,0,-1) //back
-    
-
     return {
         positionArray,
         textureArray,
         normalArray
     };
-    
 }

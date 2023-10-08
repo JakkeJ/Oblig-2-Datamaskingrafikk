@@ -38,13 +38,11 @@ function startProgram(webGLCanvas, usePhong) {
 		const roadTexture = textureImages[6];
 		const metalTexture = textureImages[7];
 		if (isPowerOfTwo1(textureImage.width) && isPowerOfTwo1(wheelTexture.height)) {
-
 			const renderInfo = {
 				gl: webGLCanvas.gl,
 				baseShader: initBaseShaders(webGLCanvas.gl),
-				diffuseLightTextureShader: initDiffuseLightTextureShader(webGLCanvas.gl, usePhong),
+				diffuseLightTextureShader: initDiffuseLightTextureShader(webGLCanvas.gl),
 				stack: new Stack(),
-
 				coordBuffers: initCoordBuffers(webGLCanvas.gl),
 				wheelRimBuffers: createCylinder(webGLCanvas.gl, textureImage, wheelTexture, 0, 0, 0, 0, 0.35),
 				torusBuffers: createTorus(webGLCanvas.gl, wheelTexture),
@@ -61,10 +59,7 @@ function startProgram(webGLCanvas, usePhong) {
 				handleBuffers: createCylinder(webGLCanvas.gl, handlebarTexture, handlebarTexture, 0, 0, 0, 0, 1),
 				worldBuffer: initWorldBuffers(webGLCanvas.gl, roadTexture),
 				roller: createCylinder(webGLCanvas.gl, metalTexture, darkGreyTexture, 0, 0, 0, 0, 1),
-
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
-				
-
 				currentlyPressedKeys: [],
 				movement: {
 					wheelRotation: 0.00,
@@ -88,7 +83,7 @@ function startProgram(webGLCanvas, usePhong) {
 					lastTimeStamp: 0
 				},
 				light: {
-					lightPosition: {x: 0.00, y:50.00, z: 50.00},
+					lightPosition: {x: 0.00, y:25.00, z: 10.00},
 
 					ambientLightColor: chromeColor.ambient,
 					diffuseLightColor: chromeColor.diffuse,
@@ -123,9 +118,6 @@ function startProgram(webGLCanvas, usePhong) {
 	}, textureUrls);
 }
 
-/**
- * Knytter tastatur-evnents til eventfunksjoner.
- */
 function initKeyPress(renderInfo) {
 	let lastMousePos = {};
 	let mouse1Pressed = false;
@@ -216,28 +208,13 @@ function initBaseShaders(gl) {
 	};
 }
 
-/**
- * Lysberegning  gjøres i fragmenshaderen.
- * @param gl
- * @returns {{uniformLocations: {normalMatrix: WebGLUniformLocation, lightPosition: WebGLUniformLocation, projectionMatrix: WebGLUniformLocation, diffuseLightColor: WebGLUniformLocation, modelMatrix: WebGLUniformLocation, ambientLightColor: WebGLUniformLocation, modelViewMatrix: WebGLUniformLocation}, attribLocations: {vertexNormal: GLint, vertexPosition: GLint}, program: (null|*)}}
- */
-function initDiffuseLightTextureShader(gl, usePhongShading = true) {
-
-	if (usePhongShading)
-		document.getElementById('gourad-phong').innerHTML = 'PHONG';
-	else
-		document.getElementById('gourad-phong').innerHTML = 'GOURAD';
-
-	// Leser shaderkode fra HTML-fila: Standard/enkel shader (posisjon og farge):
+function initDiffuseLightTextureShader(gl) {
+	document.getElementById('gourad-phong').innerHTML = 'PHONG';
 	let vertexShaderSource = undefined;
 	let fragmentShaderSource = undefined;
-	if (usePhongShading) {
-		vertexShaderSource = document.getElementById('diffuse-pointlight-phong-vertex-shader').innerHTML;
-		fragmentShaderSource = document.getElementById('diffuse-pointlight-phong-fragment-shader').innerHTML;
-	} else {
-		vertexShaderSource = document.getElementById('diffuse-pointlight-gourad-vertex-shader').innerHTML;
-		fragmentShaderSource = document.getElementById('diffuse-pointlight-gourad-fragment-shader').innerHTML;
-	}
+	vertexShaderSource = document.getElementById('diffuse-pointlight-phong-vertex-shader').innerHTML;
+	fragmentShaderSource = document.getElementById('diffuse-pointlight-phong-fragment-shader').innerHTML;
+
 	// Initialiserer  & kompilerer shader-programmene;
 	const glslShader = new WebGLShader(gl, vertexShaderSource, fragmentShaderSource);
 
@@ -1137,9 +1114,6 @@ function connectIntensityUniform(gl, shader, value) {
 	gl.uniform1f(shader.uniformLocations.intensity, value);
 }
 
-/**
- * Kopler til og aktiverer teksturkoordinat-bufferet.
- */
 function connectTextureAttribute(gl, textureShader, textureBuffer, textureObject) {
 	const numComponents = 2;    //NB!
 	const type = gl.FLOAT;
@@ -1177,15 +1151,10 @@ function animate(currentTime, renderInfo, camera) {
 
 	document.getElementById('camera').innerHTML = camera.toString();
 	document.getElementById('light-position').innerHTML = vectorToString(renderInfo.light.lightPosition);
-	rotation(renderInfo);
+	movementKeys(renderInfo);
 	draw(currentTime, renderInfo, camera);
 }
 
-/**
- * Beregner forløpt tid siden siste kall.
- * @param currentTime
- * @param renderInfo
- */
 function getElapsed(currentTime, renderInfo) {
 	let elapsed = 0.0;
 	if (renderInfo.lastTime !== 0.0)	// Først gang er lastTime = 0.0.
@@ -1194,11 +1163,6 @@ function getElapsed(currentTime, renderInfo) {
 	return elapsed;
 }
 
-/**
- * Beregner og viser FPS.
- * @param currentTime
- * @param renderInfo
- */
 function calculateFps(currentTime, fpsInfo) {
 	if (!currentTime) currentTime = 0;
 	// Sjekker om  ET sekund har forløpt...
@@ -1222,9 +1186,6 @@ function clearCanvas(gl) {
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 }
 
-/**
- * Tegner!
- */
 function draw(currentTime, renderInfo, camera) {
 	clearCanvas(renderInfo.gl);
 	drawCoord(renderInfo, camera);
@@ -1241,6 +1202,7 @@ function drawCoord(renderInfo, camera) {
 
 	let modelMatrix = new Matrix4();
 	modelMatrix.setIdentity();
+	modelMatrix.scale(4, 1, 1)
 	camera.set();
 	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
 	// Send kameramatrisene til shaderen:
@@ -1254,50 +1216,59 @@ function drawScooter(renderInfo, camera) {
 	let modelMatrix = new Matrix4();
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
+	//Tegne brett
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(renderInfo.movement.originX, 0, 0);
 	modelMatrix.scale(renderInfo.movement.bikeStretched, renderInfo.movement.bikePressed, renderInfo.movement.bikeStretched);
 	modelMatrix.rotate(renderInfo.movement.bikeTurn, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
+	//Tegne skjerm bakhjul
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(4.65, 0, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawRearWheelCover(renderInfo, camera, modelMatrix);
+	//Tegne bakhjul
 	modelMatrix.rotate(180, 0, 1 ,0)
 	drawWheel(renderInfo, camera, modelMatrix);
+	//Tegne bakaksling
 	modelMatrix.rotate(-180, 0, 1 ,0)
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(0, 0, 0);
 	drawAxle(renderInfo, camera, modelMatrix);
+	//Tegne skrå arm
 	renderInfo.stack.popMatrix();
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-4.23, 0.8, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	drawTexturedTrapezoid(renderInfo, camera, modelMatrix);
+	//Tegne styreakslingfeste
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.8, 0.85, 0);  //-0.5, 0.7, 0)
-	//sammenlegging
+	//Sammenlegging
 	modelMatrix.rotate(renderInfo.movement.scooterFrontRotation, 0, 0, 1);
-	//sammenleggning slutt
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPoleAttachment(renderInfo, camera, modelMatrix);
+	//Tegne gaffel framhjul
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.11, -0.85, 0);  //-0.12, -0.73, 0
 	modelMatrix.rotate(renderInfo.movement.frontWheelRotation, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
-	drawFrontWheelAttachment(renderInfo, camera, modelMatrix); 
+	drawFrontWheelAttachment(renderInfo, camera, modelMatrix);
+	//Tegne framhjul
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.10, -0.8, 0);  
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix.rotate(180, 0, 1 ,0)
 	drawWheel(renderInfo, camera, modelMatrix);
+	//Tegne framaksling
 	modelMatrix.rotate(-180, 0, 1 ,0)
 	modelMatrix.translate(0, 0, 0);
 	modelMatrix.scale(2, 2, 0.9);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawAxle(renderInfo, camera, modelMatrix);
+	//Tegne styreaksling
 	renderInfo.stack.popMatrix();
 	renderInfo.stack.popMatrix();
 	renderInfo.stack.popMatrix();
@@ -1305,18 +1276,19 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.translate(0.55, 4.5, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringPole(renderInfo, camera, modelMatrix);
+	//Tegne stem
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(0.5, 4, 0);
 	modelMatrix.rotate(renderInfo.movement.frontWheelRotation, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawSteeringAttachment(renderInfo, camera, modelMatrix);
+	//Tegne styre
 	modelMatrix = renderInfo.stack.peekMatrix();
 	drawHandlebar(renderInfo, camera, modelMatrix);
+	//Tegne håndtak
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(0, 0, 1.45);
 	drawHandle(renderInfo, camera, modelMatrix);
-	
-
 }
 
 function drawTexturedLighted3DShape(renderInfo, camera, drawType, drawMethod, modelMatrix, buffer, dull = false) {
@@ -1387,7 +1359,7 @@ function drawLightCube(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	modelMatrix.translate(renderInfo.light.lightPosition.x, renderInfo.light.lightPosition.y, renderInfo.light.lightPosition.z)
 	modelMatrix.rotate(0, 0, 1, 0);
-	modelMatrix.scale(0.2,0.2,0.2);
+	modelMatrix.scale(0.5,0.5,0.5);
 	camera.set();
 	let modelviewMatrix = new Matrix4(camera.viewMatrix.multiply(modelMatrix)); // NB! rekkefølge!
 	renderInfo.gl.uniformMatrix4fv(renderInfo.baseShader.uniformLocations.modelViewMatrix, false, modelviewMatrix.elements);
@@ -1507,33 +1479,25 @@ function drawWorld(renderInfo, camera){
 	drawRoller(renderInfo, camera, modelMatrix);
 }
 
-function rotation(renderInfo){
-
-	if (renderInfo.currentlyPressedKeys['KeyQ'] && renderInfo.movement.bikePressed != 0 && renderInfo.movement.rollerMovement == 340){ 
+function movementKeys(renderInfo){
+	if (renderInfo.currentlyPressedKeys['KeyQ'] && renderInfo.movement.bikePressed !== 0 && renderInfo.movement.rollerMovement === 340){
 		renderInfo.movement.rollerSize.x = 5;
 		renderInfo.movement.rollerSize.y = 5;
 		renderInfo.movement.rollerSize.z = 25;
 		let id = setInterval(function() {
-
-		renderInfo.movement.rollerRotation += 4;
+		renderInfo.movement.rollerRotation += 8;
 		renderInfo.movement.rollerMovement -= 1;
+			renderInfo.movement.originX = 0.0;
 		
 		if (Math.round(renderInfo.movement.rollerMovement) === Math.round(-renderInfo.movement.moveWorld)){
-		
 			renderInfo.movement.bikePressed = 0;
 			renderInfo.movement.bikeStretched = 2.5;
-		
-		
 		} else if (renderInfo.currentlyPressedKeys['KeyR']) {
-			clearInterval(id); 
-	
+			clearInterval(id);
 		}	else if (renderInfo.movement.rollerMovement < -340) {
 				clearInterval(id);}
 			},60)
-		
-		
 	}
-	
 
 	if (renderInfo.currentlyPressedKeys['KeyR']){
 		renderInfo.movement.bikePressed = 1;
@@ -1543,24 +1507,23 @@ function rotation(renderInfo){
 		renderInfo.movement.rollerSize.x = 0;
 		renderInfo.movement.rollerSize.y = 0;
 		renderInfo.movement.rollerSize.z = 0;
-
 	}
 
 	//wheel rotation
 	if (renderInfo.currentlyPressedKeys['KeyN'] &&
 		!(renderInfo.currentlyPressedKeys['KeyV']) &&
 		!(renderInfo.currentlyPressedKeys['KeyB']) &&
-		(renderInfo.movement.bikePressed != 0)
+		(renderInfo.movement.bikePressed !== 0)
 		){
-		renderInfo.movement.wheelRotation += 2;
+		renderInfo.movement.wheelRotation -= 2;
 		renderInfo.movement.moveWorld +=0.5;
 	}
 	if (renderInfo.currentlyPressedKeys['KeyM'] &&
 		!(renderInfo.currentlyPressedKeys['KeyV']) &&
 		!(renderInfo.currentlyPressedKeys['KeyB']) &&
-		(renderInfo.movement.bikePressed != 0)
+		(renderInfo.movement.bikePressed !== 0)
 		){
-		renderInfo.movement.wheelRotation -= 2;
+		renderInfo.movement.wheelRotation += 2;
 		renderInfo.movement.moveWorld -=0.5;
 	}
 
@@ -1587,7 +1550,7 @@ function rotation(renderInfo){
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyV']) {
-		if (renderInfo.movement.frontWheelRotation < 45 && renderInfo.movement.bikePressed != 0) {
+		if (renderInfo.movement.frontWheelRotation < 45 && renderInfo.movement.bikePressed !== 0) {
 			renderInfo.movement.frontWheelRotation += 2;
 		}
 		renderInfo.movement.keyVPressed = true;
@@ -1596,7 +1559,7 @@ function rotation(renderInfo){
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyB']) {
-		if (renderInfo.movement.frontWheelRotation > -45 && renderInfo.movement.bikePressed != 0) {
+		if (renderInfo.movement.frontWheelRotation > -45 && renderInfo.movement.bikePressed !== 0) {
 			renderInfo.movement.frontWheelRotation -= 2;
 		}
 		renderInfo.movement.keyBPressed = true;
@@ -1625,7 +1588,7 @@ function rotation(renderInfo){
 		renderInfo.movement.wheelRotation -= 2;
 	}
 
-	if (renderInfo.currentlyPressedKeys['KeyZ'] && renderInfo.movement.scooterFrontRotation === -85 && renderInfo.movement.bikePressed != 0) {
+	if (renderInfo.currentlyPressedKeys['KeyZ'] && renderInfo.movement.scooterFrontRotation === -85 && renderInfo.movement.bikePressed !== 0) {
 		let id = setInterval(function () {
 			if (renderInfo.movement.scooterFrontRotation < 0) {
 				renderInfo.movement.scooterFrontRotation += 1;
@@ -1635,7 +1598,7 @@ function rotation(renderInfo){
 			}
 		}, 10)
 	}
-	if (renderInfo.currentlyPressedKeys['KeyX'] && renderInfo.movement.scooterFrontRotation === 0 && renderInfo.movement.bikePressed != 0) {
+	if (renderInfo.currentlyPressedKeys['KeyX'] && renderInfo.movement.scooterFrontRotation === 0 && renderInfo.movement.bikePressed !== 0) {
 		let id = setInterval(function () {
 			if (renderInfo.movement.scooterFrontRotation > -85) {
 				renderInfo.movement.scooterFrontRotation -= 1;
@@ -1646,4 +1609,3 @@ function rotation(renderInfo){
 		}, 10)
 	}
 }
-
