@@ -60,7 +60,6 @@ function startProgram(webGLCanvas, usePhong) {
 				handlebarBuffers: createCylinder(webGLCanvas.gl, greyTexture, greyTexture, 0, 0, 0, 0, 1),
 				handleBuffers: createCylinder(webGLCanvas.gl, handlebarTexture, handlebarTexture, 0, 0, 0, 0, 1),
 				worldBuffer: initWorldBuffers(webGLCanvas.gl, roadTexture),
-				streetLightBuffer: createCylinder(webGLCanvas.gl, metalTexture, darkGreyTexture, 0, 0, 0, 0, 1),
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
 				
@@ -83,7 +82,7 @@ function startProgram(webGLCanvas, usePhong) {
 					lastTimeStamp: 0
 				},
 				light: {
-					lightPosition: {x: 0.00, y:20.00, z: 0.00},
+					lightPosition: {x: 0.00, y:50.00, z: 50.00},
 
 					ambientLightColor: chromeColor.ambient,
 					diffuseLightColor: chromeColor.diffuse,
@@ -122,8 +121,25 @@ function startProgram(webGLCanvas, usePhong) {
  * Knytter tastatur-evnents til eventfunksjoner.
  */
 function initKeyPress(renderInfo) {
-	let isScrollWheelDown = false; // Add this line
-	let lastMouseX, lastMouseY; // Add these lines
+	let lastMousePos = {};
+	let mouse1Pressed = false;
+
+	const directions = {
+		x: { positive: 'moveXLeft', negative: 'moveXRight' },
+		y: { positive: 'moveYUp', negative: 'moveYDown' }
+	};
+
+	function handleDirection(dir, value, lastValue, key) {
+		if (lastValue !== undefined) {
+			let direction = Math.sign(value - lastValue);
+			if (direction !== 0) {
+				let directionKey = directions[key][direction > 0 ? 'positive' : 'negative'];
+				renderInfo.currentlyPressedKeys[directionKey] = true;
+				setTimeout(() => { renderInfo.currentlyPressedKeys[directionKey] = false; }, 100);
+			}
+		}
+		lastMousePos[key] = value;
+	}
 
 	document.addEventListener('keyup', (event) => {
 		renderInfo.currentlyPressedKeys[event.code] = false;
@@ -133,6 +149,31 @@ function initKeyPress(renderInfo) {
 		renderInfo.currentlyPressedKeys[event.code] = true;
 	}, false);
 
+	//Slippe musknapp 1
+	document.addEventListener("mouseup", (event) => {
+		if (event.button === 0) {
+			mouse1Pressed = false;
+			document.body.style.cursor = 'auto'; // Show the cursor
+		}
+	}, false);
+
+	//Trykke musknapp 1
+	document.addEventListener("mousedown", (event) => {
+		if (event.button === 0) {
+			mouse1Pressed = true;
+			document.body.style.cursor = 'none'; // Hide the cursor
+		}
+	}, false);
+
+	//Bruker ikke Y, ref camera.js, umulig å styre uten quaternion om kameraet står på X-aksen.
+	document.addEventListener("mousemove", (event) => {
+		if (mouse1Pressed) {
+			handleDirection('x', event.clientX, lastMousePos.x, 'x');
+			handleDirection('y', event.clientY, lastMousePos.y, 'y');
+		}
+	}, false);
+
+	//Zoom
 	document.addEventListener('wheel', (event) => {
 		let dir = Math.sign(event.deltaY);
 		if (dir > 0) {
@@ -1217,8 +1258,9 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.translate(4.65, 0, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawRearWheelCover(renderInfo, camera, modelMatrix);
+	modelMatrix.rotate(180, 0, 1 ,0)
 	drawWheel(renderInfo, camera, modelMatrix);
-
+	modelMatrix.rotate(-180, 0, 1 ,0)
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(0, 0, 0);
 	drawAxle(renderInfo, camera, modelMatrix);
@@ -1243,7 +1285,9 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.translate(-0.10, -0.8, 0);  
 	renderInfo.stack.pushMatrix(modelMatrix);
+	modelMatrix.rotate(180, 0, 1 ,0)
 	drawWheel(renderInfo, camera, modelMatrix);
+	modelMatrix.rotate(-180, 0, 1 ,0)
 	modelMatrix.translate(0, 0, 0);
 	modelMatrix.scale(2, 2, 0.9);
 	renderInfo.stack.pushMatrix(modelMatrix);
@@ -1435,27 +1479,14 @@ function drawHandle(renderInfo, camera, modelMatrix) {
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle, true);
 }
 
-function drawStreetlight(renderInfo, camera, modelMatrix) {
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.streetLightBuffer, false);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.streetLightBuffer.topCircle);
-	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.streetLightBuffer.bottomCircle);
-}
-
 function drawWorld(renderInfo, camera){
 	let modelMatrix = new Matrix4();
 	modelMatrix.setIdentity();
 	camera.set();
-	modelMatrix.translate(renderInfo.movement.moveWorld, -1, 10);
+	modelMatrix.translate(renderInfo.movement.moveWorld, -1.65, 10);
 	modelMatrix.rotate(0, 0, 1, 0)
-	modelMatrix.scale(400, 0.05, 100);
+	modelMatrix.scale(400, 1, 100);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.worldBuffer, true);
-	modelMatrix = new Matrix4();
-
-	modelMatrix.translate(renderInfo.movement.moveWorld, 20, -18)
-
-	modelMatrix.rotate(-90, 1, 0, 0);
-	modelMatrix.scale(1, 1, 40);
-	drawStreetlight(renderInfo, camera, modelMatrix);
 }
 
 function rotation(renderInfo){
@@ -1463,13 +1494,13 @@ function rotation(renderInfo){
 	if (renderInfo.currentlyPressedKeys['KeyN'] &&
 		!(renderInfo.currentlyPressedKeys['KeyV']) &&
 		!(renderInfo.currentlyPressedKeys['KeyB'])){
-		renderInfo.movement.wheelRotation += 2;
+		renderInfo.movement.wheelRotation -= 2;
 		renderInfo.movement.moveWorld +=0.2;
 	}
 	if (renderInfo.currentlyPressedKeys['KeyM'] &&
 		!(renderInfo.currentlyPressedKeys['KeyV']) &&
 		!(renderInfo.currentlyPressedKeys['KeyB'])){
-		renderInfo.movement.wheelRotation -= 2;
+		renderInfo.movement.wheelRotation += 2;
 		renderInfo.movement.moveWorld -=0.2;
 	}
 
@@ -1525,11 +1556,13 @@ function rotation(renderInfo){
 		}, 10)
 	}
 	if (renderInfo.currentlyPressedKeys['KeyF']) {
-		renderInfo.movement.originX += 0.5;
+		renderInfo.movement.originX += 0.1;
+		renderInfo.movement.wheelRotation += 2;
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyG']) {
-		renderInfo.movement.originX -= 0.5;
+		renderInfo.movement.originX -= 0.1;
+		renderInfo.movement.wheelRotation -= 2;
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyZ'] && renderInfo.movement.scooterFrontRotation === -85) {
