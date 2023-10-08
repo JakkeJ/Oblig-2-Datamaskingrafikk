@@ -61,6 +61,7 @@ function startProgram(webGLCanvas, usePhong) {
 				handleBuffers: createCylinder(webGLCanvas.gl, handlebarTexture, handlebarTexture, 0, 0, 0, 0, 1),
 				worldBuffer: initWorldBuffers(webGLCanvas.gl, roadTexture),
 				streetLightBuffer: createCylinder(webGLCanvas.gl, metalTexture, darkGreyTexture, 0, 0, 0, 0, 1),
+				roller: createCylinder(webGLCanvas.gl, metalTexture, darkGreyTexture, 0, 0, 0, 0, 1),
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
 				
@@ -75,7 +76,12 @@ function startProgram(webGLCanvas, usePhong) {
 					bikeTurn: 0.00,
 					keyVPressed: false,
 					keyBPressed: false,
-					originX: 0.00
+					originX: 0.00,
+					rollerRotation: 0.00,
+					rollerMovement: 340,
+					bikePressed: 1,
+					bikeStretched: 1,
+					rollerSize: {x: 0, y: 0, z: 0},
 				},
 				lastTime: 0,
 				fpsInfo: {  // Brukes til å beregne og vise FPS (Frames Per Seconds):
@@ -96,7 +102,7 @@ function startProgram(webGLCanvas, usePhong) {
 					specularDullLightColor: dullColor.specular,
 					shininessDull: dullColor.shininess,
 					intensityDull: dullColor.intensity,
-				},
+				},				
 			};
 
 			initKeyPress(renderInfo);
@@ -1208,8 +1214,8 @@ function drawScooter(renderInfo, camera) {
 	modelMatrix.setIdentity();
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
-	modelMatrix.scale(1, 1, 1);
 	modelMatrix.translate(renderInfo.movement.originX, 0, 0);
+	modelMatrix.scale(renderInfo.movement.bikeStretched, renderInfo.movement.bikePressed, renderInfo.movement.bikeStretched);
 	modelMatrix.rotate(renderInfo.movement.bikeTurn, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
@@ -1441,6 +1447,12 @@ function drawStreetlight(renderInfo, camera, modelMatrix) {
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.streetLightBuffer.bottomCircle);
 }
 
+function drawRoller(renderInfo, camera, modelMatrix) {
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.roller, false);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.roller.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.roller.bottomCircle);
+}
+
 function drawWorld(renderInfo, camera){
 	let modelMatrix = new Matrix4();
 	modelMatrix.setIdentity();
@@ -1456,21 +1468,68 @@ function drawWorld(renderInfo, camera){
 	modelMatrix.rotate(-90, 1, 0, 0);
 	modelMatrix.scale(1, 1, 40);
 	drawStreetlight(renderInfo, camera, modelMatrix);
+	modelMatrix = new Matrix4();
+	modelMatrix.translate(renderInfo.movement.rollerMovement + renderInfo.movement.moveWorld, 4, 0)
+	modelMatrix.rotate(renderInfo.movement.rollerRotation, 0, 0, 1);
+	modelMatrix.scale(renderInfo.movement.rollerSize.x, renderInfo.movement.rollerSize.y, renderInfo.movement.rollerSize.z);
+	drawRoller(renderInfo, camera, modelMatrix);
 }
 
 function rotation(renderInfo){
+
+	if (renderInfo.currentlyPressedKeys['KeyQ'] && renderInfo.movement.bikePressed != 0 && renderInfo.movement.rollerMovement == 340){ 
+		renderInfo.movement.rollerSize.x = 5;
+		renderInfo.movement.rollerSize.y = 5;
+		renderInfo.movement.rollerSize.z = 25;
+		let id = setInterval(function() {
+
+		renderInfo.movement.rollerRotation += 2;
+		renderInfo.movement.rollerMovement -= 0.4;
+		
+		if (Math.round(renderInfo.movement.rollerMovement) === Math.round(-renderInfo.movement.moveWorld)){
+		
+			renderInfo.movement.bikePressed = 0;
+			renderInfo.movement.bikeStretched = 2.5;
+		
+		
+		} else if (renderInfo.currentlyPressedKeys['KeyR']) {
+			clearInterval(id); 
+	
+		}	else if (renderInfo.movement.rollerMovement < -340) {
+				clearInterval(id);}
+			},60)
+		
+		
+	}
+	
+
+	if (renderInfo.currentlyPressedKeys['KeyR']){
+		renderInfo.movement.bikePressed = 1;
+		renderInfo.movement.bikeStretched = 1;
+		renderInfo.movement.rollerMovement = 340;
+		renderInfo.movement.moveWorld = 0;
+		renderInfo.movement.rollerSize.x = 0;
+		renderInfo.movement.rollerSize.y = 0;
+		renderInfo.movement.rollerSize.z = 0;
+
+	}
+
 	//wheel rotation
 	if (renderInfo.currentlyPressedKeys['KeyN'] &&
 		!(renderInfo.currentlyPressedKeys['KeyV']) &&
-		!(renderInfo.currentlyPressedKeys['KeyB'])){
+		!(renderInfo.currentlyPressedKeys['KeyB']) &&
+		(renderInfo.movement.bikePressed != 0)
+		){
 		renderInfo.movement.wheelRotation += 2;
-		renderInfo.movement.moveWorld +=0.2;
+		renderInfo.movement.moveWorld +=0.5;
 	}
 	if (renderInfo.currentlyPressedKeys['KeyM'] &&
 		!(renderInfo.currentlyPressedKeys['KeyV']) &&
-		!(renderInfo.currentlyPressedKeys['KeyB'])){
+		!(renderInfo.currentlyPressedKeys['KeyB']) &&
+		(renderInfo.movement.bikePressed != 0)
+		){
 		renderInfo.movement.wheelRotation -= 2;
-		renderInfo.movement.moveWorld -=0.2;
+		renderInfo.movement.moveWorld -=0.5;
 	}
 
 	//light position
@@ -1496,7 +1555,7 @@ function rotation(renderInfo){
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyV']) {
-		if (renderInfo.movement.frontWheelRotation < 45) {
+		if (renderInfo.movement.frontWheelRotation < 45 && renderInfo.movement.bikePressed != 0) {
 			renderInfo.movement.frontWheelRotation += 2;
 		}
 		renderInfo.movement.keyVPressed = true;
@@ -1505,7 +1564,7 @@ function rotation(renderInfo){
 	}
 
 	if (renderInfo.currentlyPressedKeys['KeyB']) {
-		if (renderInfo.movement.frontWheelRotation > -45) {
+		if (renderInfo.movement.frontWheelRotation > -45 && renderInfo.movement.bikePressed != 0) {
 			renderInfo.movement.frontWheelRotation -= 2;
 		}
 		renderInfo.movement.keyBPressed = true;
@@ -1532,7 +1591,7 @@ function rotation(renderInfo){
 		renderInfo.movement.originX -= 0.5;
 	}
 
-	if (renderInfo.currentlyPressedKeys['KeyZ'] && renderInfo.movement.scooterFrontRotation === -85) {
+	if (renderInfo.currentlyPressedKeys['KeyZ'] && renderInfo.movement.scooterFrontRotation === -85 && renderInfo.movement.bikePressed != 0) {
 		let id = setInterval(function () {
 			if (renderInfo.movement.scooterFrontRotation < 0) {
 				renderInfo.movement.scooterFrontRotation += 1;
@@ -1542,7 +1601,7 @@ function rotation(renderInfo){
 			}
 		}, 10)
 	}
-	if (renderInfo.currentlyPressedKeys['KeyX'] && renderInfo.movement.scooterFrontRotation === 0) {
+	if (renderInfo.currentlyPressedKeys['KeyX'] && renderInfo.movement.scooterFrontRotation === 0 && renderInfo.movement.bikePressed != 0) {
 		let id = setInterval(function () {
 			if (renderInfo.movement.scooterFrontRotation > -85) {
 				renderInfo.movement.scooterFrontRotation -= 1;
