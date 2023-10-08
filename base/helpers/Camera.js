@@ -90,17 +90,17 @@ export class Camera {
     handleKeys(elapsed) {
         let camPosVec = vec3.fromValues(this.camPosX, this.camPosY, this.camPosZ);
         //Enkel rotasjon av kameraposisjonen:
-        if (this.currentlyPressedKeys['KeyA']) {    //A
-            rotateVector(2, camPosVec, 0, 1, 0);  //Roterer camPosVec 2 grader om y-aksen.
+        if (this.currentlyPressedKeys['KeyA'] || (this.currentlyPressedKeys['moveXRight'])) {    //A
+            rotateVector(1.5, camPosVec, 0, 1, 0);  //Roterer camPosVec 2 grader om y-aksen.
         }
-        if (this.currentlyPressedKeys['KeyD']) {	//D
-            rotateVector(-2, camPosVec, 0, 1, 0);  //Roterer camPosVec -2 grader om y-aksen.
+        if (this.currentlyPressedKeys['KeyD'] || (this.currentlyPressedKeys['moveXLeft'])) {	//D
+            rotateVector(-1.5, camPosVec, 0, 1, 0);  //Roterer camPosVec -2 grader om y-aksen.
         }
         if (this.currentlyPressedKeys['KeyW']) {	//W
-            rotateVector(2, camPosVec, 1, 0, 0);  //Roterer camPosVec 2 grader om x-aksen.
+            rotateVector(1.5, camPosVec, 1, 0, 0);  //Roterer camPosVec 2 grader om x-aksen.
         }
         if (this.currentlyPressedKeys['KeyS']) {	//S
-            rotateVector(-2, camPosVec, 1, 0, 0);  //Roterer camPosVec 2 grader om x-aksen.
+            rotateVector(-1.5, camPosVec, 1, 0, 0);  //Roterer camPosVec 2 grader om x-aksen.
         }
 
         //Zoom inn og ut:
