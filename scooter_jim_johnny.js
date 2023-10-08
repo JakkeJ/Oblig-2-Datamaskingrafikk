@@ -24,6 +24,7 @@ function startProgram(webGLCanvas, usePhong) {
 		'./base/textures/darkGreyTexture.png',
 		'./base/textures/handlebarTexture.png',
 		'./base/textures/roadTexture.png',
+		'./base/textures/metal1.png'
 	];
 	const chromeColor = niceColors.chrome;
 	const dullColor = niceColors.dullChrome;
@@ -35,6 +36,7 @@ function startProgram(webGLCanvas, usePhong) {
 		const darkGreyTexture = textureImages[4];
 		const handlebarTexture = textureImages[5];
 		const roadTexture = textureImages[6];
+		const metalTexture = textureImages[7];
 		if (isPowerOfTwo1(textureImage.width) && isPowerOfTwo1(wheelTexture.height)) {
 
 			const renderInfo = {
@@ -58,6 +60,7 @@ function startProgram(webGLCanvas, usePhong) {
 				handlebarBuffers: createCylinder(webGLCanvas.gl, greyTexture, greyTexture, 0, 0, 0, 0, 1),
 				handleBuffers: createCylinder(webGLCanvas.gl, handlebarTexture, handlebarTexture, 0, 0, 0, 0, 1),
 				worldBuffer: initWorldBuffers(webGLCanvas.gl, roadTexture),
+				streetLightBuffer: createCylinder(webGLCanvas.gl, metalTexture, darkGreyTexture, 0, 0, 0, 0, 1),
 
 				lightCubeBuffers: createLightCube(webGLCanvas.gl),
 				
@@ -70,7 +73,9 @@ function startProgram(webGLCanvas, usePhong) {
 					moveWorld: 0.00,
 					worldTurn: 0.00,
 					bikeTurn: 0.00,
-			
+					keyVPressed: false,
+					keyBPressed: false,
+					originX: 0.00
 				},
 				lastTime: 0,
 				fpsInfo: {  // Brukes til å beregne og vise FPS (Frames Per Seconds):
@@ -78,7 +83,7 @@ function startProgram(webGLCanvas, usePhong) {
 					lastTimeStamp: 0
 				},
 				light: {
-					lightPosition: {x: 0.00, y: 7.00, z: 0.00},
+					lightPosition: {x: 0.00, y:20.00, z: 0.00},
 
 					ambientLightColor: chromeColor.ambient,
 					diffuseLightColor: chromeColor.diffuse,
@@ -1179,7 +1184,6 @@ function draw(currentTime, renderInfo, camera) {
 	drawScooter(renderInfo, camera);
 	drawLightCube(renderInfo, camera);
 	drawWorld(renderInfo, camera);
-	
 }
 
 function drawCoord(renderInfo, camera) {
@@ -1205,7 +1209,7 @@ function drawScooter(renderInfo, camera) {
 	renderInfo.stack.pushMatrix(modelMatrix);
 	modelMatrix = renderInfo.stack.peekMatrix();
 	modelMatrix.scale(1, 1, 1);
-	modelMatrix.translate(0, 0, 0);
+	modelMatrix.translate(renderInfo.movement.originX, 0, 0);
 	modelMatrix.rotate(renderInfo.movement.bikeTurn, 0, 1, 0);
 	renderInfo.stack.pushMatrix(modelMatrix);
 	drawBoard(renderInfo, camera, modelMatrix);
@@ -1431,24 +1435,40 @@ function drawHandle(renderInfo, camera, modelMatrix) {
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.handleBuffers.bottomCircle, true);
 }
 
+function drawStreetlight(renderInfo, camera, modelMatrix) {
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_STRIP, "array", modelMatrix, renderInfo.streetLightBuffer, false);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.streetLightBuffer.topCircle);
+	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLE_FAN, "array", modelMatrix, renderInfo.streetLightBuffer.bottomCircle);
+}
+
 function drawWorld(renderInfo, camera){
 	let modelMatrix = new Matrix4();
 	modelMatrix.setIdentity();
 	camera.set();
-	modelMatrix.translate(renderInfo.movement.moveWorld, -1, 0);
-	modelMatrix.rotate(renderInfo.movement.worldTurn, 0, 1, 0)
-	modelMatrix.scale(100, 0.05, 100);
+	modelMatrix.translate(renderInfo.movement.moveWorld, -1, 10);
+	modelMatrix.rotate(0, 0, 1, 0)
+	modelMatrix.scale(400, 0.05, 100);
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.worldBuffer, true);
-	
+	modelMatrix = new Matrix4();
+
+	modelMatrix.translate(0, 20, -18)
+
+	modelMatrix.rotate(-90, 1, 0, 0);
+	modelMatrix.scale(1, 1, 40);
+	drawStreetlight(renderInfo, camera, modelMatrix);
 }
 
 function rotation(renderInfo){
 	//wheel rotation
-	if (renderInfo.currentlyPressedKeys['KeyN']){
+	if (renderInfo.currentlyPressedKeys['KeyN'] &&
+		!(renderInfo.currentlyPressedKeys['KeyV']) &&
+		!(renderInfo.currentlyPressedKeys['KeyB'])){
 		renderInfo.movement.wheelRotation += 2;
 		renderInfo.movement.moveWorld +=0.2;
 	}
-	if (renderInfo.currentlyPressedKeys['KeyM']){
+	if (renderInfo.currentlyPressedKeys['KeyM'] &&
+		!(renderInfo.currentlyPressedKeys['KeyV']) &&
+		!(renderInfo.currentlyPressedKeys['KeyB'])){
 		renderInfo.movement.wheelRotation -= 2;
 		renderInfo.movement.moveWorld -=0.2;
 	}
@@ -1471,47 +1491,66 @@ function rotation(renderInfo){
 	if (renderInfo.currentlyPressedKeys['KeyU']){
 		renderInfo.light.lightPosition.z += 0.1;
 	}
-	if (renderInfo.currentlyPressedKeys['KeyO']){
+	if (renderInfo.currentlyPressedKeys['KeyO']) {
 		renderInfo.light.lightPosition.z -= 0.1;
 	}
 
-	//Scooter movement
-
-	if (renderInfo.currentlyPressedKeys['KeyV']){
+	if (renderInfo.currentlyPressedKeys['KeyV']) {
 		if (renderInfo.movement.frontWheelRotation < 45) {
-		renderInfo.movement.frontWheelRotation += 1;
-		renderInfo.movement.worldTurn -=0.1;
-		//renderInfo.movement.bikeTurn +=2;
-	};
-	
+			renderInfo.movement.frontWheelRotation += 2;
+		}
+		renderInfo.movement.keyVPressed = true;
+	} else {
+		renderInfo.movement.keyVPressed = false;
 	}
-	if (renderInfo.currentlyPressedKeys['KeyB']){
+
+	if (renderInfo.currentlyPressedKeys['KeyB']) {
 		if (renderInfo.movement.frontWheelRotation > -45) {
-			renderInfo.movement.frontWheelRotation -= 1;
-			renderInfo.movement.worldTurn +=0.1;
-			//renderInfo.movement.bikeTurn -=2;
-		};
+			renderInfo.movement.frontWheelRotation -= 2;
+		}
+		renderInfo.movement.keyBPressed = true;
+	} else {
+		renderInfo.movement.keyBPressed = false;
 	}
 
-	if (renderInfo.currentlyPressedKeys['KeyX'] && renderInfo.movement.scooterFrontRotation == -85){
-		let id = setInterval(function(){
-		if (renderInfo.movement.scooterFrontRotation < 0) {
-		renderInfo.movement.scooterFrontRotation += 1}
-		else {clearInterval(id)}
-	}, 10)
-
-
+	if (!renderInfo.movement.keyVPressed && !renderInfo.movement.keyBPressed) {
+		let id = setInterval(function() {
+			if (renderInfo.movement.frontWheelRotation > 0) {
+				renderInfo.movement.frontWheelRotation -= 0.5;
+			} else if (renderInfo.movement.frontWheelRotation < 0) {
+				renderInfo.movement.frontWheelRotation += 0.5;
+			} else {
+				clearInterval(id);
+			}
+		}, 10)
 	}
-	
-	
-	if (renderInfo.currentlyPressedKeys['KeyZ'] &&  renderInfo.movement.scooterFrontRotation == 0){
-		let id = setInterval(function(){
-		if (renderInfo.movement.scooterFrontRotation > -85) {
-			renderInfo.movement.scooterFrontRotation -= 1}
-			else {clearInterval(id)}
-	}, 10)
-	
+	if (renderInfo.currentlyPressedKeys['KeyF']) {
+		renderInfo.movement.originX += 0.5;
 	}
 
-	
+	if (renderInfo.currentlyPressedKeys['KeyG']) {
+		renderInfo.movement.originX -= 0.5;
+	}
+
+	if (renderInfo.currentlyPressedKeys['KeyZ'] && renderInfo.movement.scooterFrontRotation === -85) {
+		let id = setInterval(function () {
+			if (renderInfo.movement.scooterFrontRotation < 0) {
+				renderInfo.movement.scooterFrontRotation += 1;
+			} else {
+				renderInfo.movement.flatPacked = false;
+				clearInterval(id);
+			}
+		}, 10)
+	}
+	if (renderInfo.currentlyPressedKeys['KeyX'] && renderInfo.movement.scooterFrontRotation === 0) {
+		let id = setInterval(function () {
+			if (renderInfo.movement.scooterFrontRotation > -85) {
+				renderInfo.movement.scooterFrontRotation -= 1;
+			} else {
+				renderInfo.movement.flatPacked = true;
+				clearInterval(id);
+			}
+		}, 10)
+	}
 }
+

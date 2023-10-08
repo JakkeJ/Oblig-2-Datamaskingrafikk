@@ -9,10 +9,12 @@
 </head>
 
 <body>
-    <div style="top:0px; left:15px; width:100%; text-align:left; color:black;" class="ui">
-        <h2>Oblig2 Sparkesykkel</h2>
+    <div style="top:15px; background-color: rgba(0, 0, 0, 0.6); left:15px; width:22%; padding: 10px ;text-align:left; color:white;" class="ui">
+        <h2 style="margin: 0; padding: 0;">Oblig2 Sparkesykkel</h2>
         FPS: <span id="fps">--</span><br>
         WASD Kamerastyring.<br>
+        FG Flytte origo<br>
+        NM Fram/bakover<br>
         VB Vende styret<br>
         UIOJKL Lysstyring<br>
         Scrollhjul Zoom<br>
@@ -21,8 +23,8 @@
         <b>Diffus lysfarge: <span id="diffuse-light-color">--</span></b><br>
         <b>Ambient lys: <span id="ambient-light">--</span></b><br>
         <b>Specular lysfarge: <span id="specular-light-color">--</span></b><br><br>
-        <b>Kameraposisjon: <span id="camera">--</span></b><br><br>
-        <span id="gourad-phong"></span></b><br>
+        <b>Kameraposisjon: <span id="camera">--</span></b>
+        <span id="gourad-phong" style="display: none;"></span>
     </div>
     <!-- SHADERS -->
     <script id="base-vertex-shader" type="x-shader/x-vertex">

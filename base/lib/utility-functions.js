@@ -77,18 +77,18 @@ export const niceColors = {
 		intensity: 1.0
 	},
 	chrome: {
-		ambient: {r: 0.25, g: 0.25, b:0.25, a:1.0},
+		ambient: {r: 0.20, g: 0.20, b:0.20, a:1.0},
 		diffuse: {r: 0.4, g: 0.4, b:0.4, a:1.0},
 		specular: {r: 0.774597, g: 0.774597, b:0.774597, a:1.0},
 		shininess: 76.8,
 		intensity: 1.0
 	},
 	dullChrome: {
-		ambient: {r: 0.25, g: 0.25, b:0.25, a:1.0},
+		ambient: {r: 0.20, g: 0.20, b:0.20, a:1.0},
 		diffuse: {r: 0.4, g: 0.4, b:0.4, a:1.0},
 		specular: {r: 0.774597, g: 0.774597, b:0.774597, a:1.0},
-		shininess: 1.0,
-		intensity: 0.2
+		shininess: 2.0,
+		intensity: 0.1
 	},
 	pewter: {
 		ambient: {r: 0.105882, g:0.058824, b:0.113725, a:0.5},
