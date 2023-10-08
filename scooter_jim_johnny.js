@@ -1451,7 +1451,7 @@ function drawWorld(renderInfo, camera){
 	drawTexturedLighted3DShape(renderInfo, camera, renderInfo.gl.TRIANGLES, "array", modelMatrix, renderInfo.worldBuffer, true);
 	modelMatrix = new Matrix4();
 
-	modelMatrix.translate(0, 20, -18)
+	modelMatrix.translate(renderInfo.movement.moveWorld, 20, -18)
 
 	modelMatrix.rotate(-90, 1, 0, 0);
 	modelMatrix.scale(1, 1, 40);
